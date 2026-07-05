@@ -8,6 +8,7 @@ import Pagination from '../../components/common/Pagination'
 export default function ScanHistoryPage() {
   const [page, setPage] = useState(1)
   const [selectedConnection, setSelectedConnection] = useState<string | undefined>()
+  const [filterDeleted, setFilterDeleted] = useState(false)
 
   const { data: connections = [] } = useQuery({
     queryKey: ['connections'],
@@ -15,8 +16,8 @@ export default function ScanHistoryPage() {
   })
 
   const { data: scans } = useQuery({
-    queryKey: ['scans', page, selectedConnection],
-    queryFn: () => scansApi.list(page, 20, selectedConnection),
+    queryKey: ['scans', page, selectedConnection, filterDeleted],
+    queryFn: () => scansApi.list(page, filterDeleted ? 1000 : 20, selectedConnection),
   })
 
   const getStatusVariant = (status: string) => {
@@ -34,6 +35,14 @@ export default function ScanHistoryPage() {
     return new Date(date).toLocaleString()
   }
 
+  const getFilteredScans = () => {
+    if (!scans) return []
+    if (!filterDeleted) return scans.scans
+    return scans.scans.filter(scan => !connections.find(c => c.id === scan.connection_id))
+  }
+
+  const filteredScans = getFilteredScans()
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Scan history</h1>
@@ -42,14 +51,21 @@ export default function ScanHistoryPage() {
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">Filter by connection</label>
           <select
-            value={selectedConnection || ''}
+            value={filterDeleted ? 'deleted' : (selectedConnection || '')}
             onChange={(e) => {
-              setSelectedConnection(e.target.value || undefined)
+              if (e.target.value === 'deleted') {
+                setFilterDeleted(true)
+                setSelectedConnection(undefined)
+              } else {
+                setFilterDeleted(false)
+                setSelectedConnection(e.target.value || undefined)
+              }
               setPage(1)
             }}
             className="border border-gray-300 rounded-lg px-3 py-2 w-full md:w-64"
           >
             <option value="">All connections</option>
+            <option value="deleted">Deleted connections</option>
             {connections.map(conn => (
               <option key={conn.id} value={conn.id}>{conn.name}</option>
             ))}
@@ -69,12 +85,12 @@ export default function ScanHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {!scans || scans.scans.length === 0 ? (
+              {!scans || filteredScans.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-600">No scans found</td>
                 </tr>
               ) : (
-                scans.scans.map(scan => {
+                filteredScans.map(scan => {
                   const connection = connections.find(c => c.id === scan.connection_id)
                   const displayName = connection?.name || (scan.connection_name ? `${scan.connection_name} (deleted)` : 'Unknown')
                   return (
@@ -95,7 +111,7 @@ export default function ScanHistoryPage() {
           </table>
         </div>
 
-        {scans && (
+        {scans && !filterDeleted && (
           <div className="mt-6">
             <Pagination
               page={page}
