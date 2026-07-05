@@ -99,7 +99,7 @@ export default function ConnectionsListPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete connection?</h3>
-            <p className="text-gray-600 mb-6">This will delete the connection and all associated scans. This action cannot be undone.</p>
+            <p className="text-gray-600 mb-6">This will delete the connection. Associated scans will remain in the scan history.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDeleteId(null)}
