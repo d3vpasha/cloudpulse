@@ -46,6 +46,7 @@ def trigger_scan(
         id=str(uuid.uuid4()),
         workspace_id=1,
         connection_id=connection_id,
+        connection_name=connection.name,
         status=ScanStatus.PENDING,
         trigger=ScanTrigger.MANUAL,
         started_at=datetime.utcnow(),

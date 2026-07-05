@@ -6,6 +6,7 @@ from app.models.enums import ScanStatus, ScanTrigger
 class ScanResponse(BaseModel):
     id: str
     connection_id: str
+    connection_name: str | None
     status: ScanStatus
     trigger: ScanTrigger
     started_at: datetime | None

@@ -10,6 +10,7 @@ class Scan(Base):
     id = Column(String, primary_key=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id"), default=1)
     connection_id = Column(String, ForeignKey("connections.id"))
+    connection_name = Column(String, nullable=True)
     status = Column(Enum(ScanStatus), default=ScanStatus.PENDING)
     trigger = Column(Enum(ScanTrigger), default=ScanTrigger.MANUAL)
     started_at = Column(DateTime, nullable=True)

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 from app.config import settings
 from app.db.base import engine, Base
 from app.models.workspace import Workspace
@@ -26,6 +27,16 @@ Base.metadata.create_all(bind=engine)
 
 from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
+
+def run_migrations():
+    inspector = inspect(engine)
+    scans_columns = [col['name'] for col in inspector.get_columns('scans')]
+    if 'connection_name' not in scans_columns:
+        with engine.connect() as conn:
+            conn.execute(text('ALTER TABLE scans ADD COLUMN connection_name TEXT'))
+            conn.commit()
+
+run_migrations()
 
 def init_workspace():
     db = SessionLocal()

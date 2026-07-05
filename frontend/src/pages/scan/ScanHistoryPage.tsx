@@ -76,10 +76,11 @@ export default function ScanHistoryPage() {
               ) : (
                 scans.scans.map(scan => {
                   const connection = connections.find(c => c.id === scan.connection_id)
+                  const displayName = connection?.name || (scan.connection_name ? `${scan.connection_name} (deleted)` : 'Unknown')
                   return (
                     <tr key={scan.id} className="border-b hover:bg-gray-50">
                       <td className="px-6 py-4 text-xs">{formatDate(scan.started_at)}</td>
-                      <td className="px-6 py-4 text-sm">{connection?.name || 'Unknown'}</td>
+                      <td className="px-6 py-4 text-sm">{displayName}</td>
                       <td className="px-6 py-4">
                         <StatusBadge status={scan.status} variant={getStatusVariant(scan.status)} />
                       </td>
