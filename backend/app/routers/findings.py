@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import and_
+from sqlalchemy import and_, case
 from sqlalchemy.orm import Session
 from app.db.base import get_db
 from app.models.finding import Finding
@@ -27,6 +27,7 @@ def list_findings(
     connection_id: str | None = None,
     search: str | None = None,
     sort_by: str = "priority_rank",
+    sort_order: str = "asc",
     db: Session = Depends(get_db),
 ):
     query = db.query(Finding).filter(Finding.workspace_id == 1)
@@ -68,10 +69,33 @@ def list_findings(
 
     total = query.count()
 
+    is_desc = sort_order.lower() == "desc"
+
     if sort_by == "priority_rank":
-        query = query.order_by(Finding.priority_rank.asc(), Finding.created_at.desc())
+        order_expr = Finding.priority_rank.desc() if is_desc else Finding.priority_rank.asc()
+        query = query.order_by(order_expr, Finding.created_at.desc())
+    elif sort_by == "category":
+        order_expr = Finding.category.desc() if is_desc else Finding.category.asc()
+        query = query.order_by(order_expr)
+    elif sort_by == "region":
+        order_expr = Finding.region.desc() if is_desc else Finding.region.asc()
+        query = query.order_by(order_expr)
     elif sort_by == "savings":
-        query = query.order_by(Finding.estimated_monthly_savings.desc())
+        order_expr = Finding.estimated_monthly_savings.desc() if is_desc else Finding.estimated_monthly_savings.asc()
+        query = query.order_by(order_expr)
+    elif sort_by == "risk_level":
+        risk_severity = case(
+            (Finding.risk_level == RiskLevel.CRITICAL, 0),
+            (Finding.risk_level == RiskLevel.HIGH, 1),
+            (Finding.risk_level == RiskLevel.MEDIUM, 2),
+            (Finding.risk_level == RiskLevel.LOW, 3),
+            else_=4,
+        )
+        order_expr = risk_severity.desc() if is_desc else risk_severity.asc()
+        query = query.order_by(order_expr)
+    elif sort_by == "first_detected_at":
+        order_expr = Finding.first_detected_at.desc() if is_desc else Finding.first_detected_at.asc()
+        query = query.order_by(order_expr)
     else:
         query = query.order_by(Finding.created_at.desc())
 

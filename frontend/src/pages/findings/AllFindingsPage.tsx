@@ -10,14 +10,20 @@ export default function AllFindingsPage() {
     risk_level?: string
     search?: string
   }>({})
+  const [sort, setSort] = useState<{ sortBy: string; sortOrder: 'asc' | 'desc' }>({
+    sortBy: 'priority_rank',
+    sortOrder: 'asc',
+  })
 
   const { data: findings, refetch } = useQuery({
-    queryKey: ['findings', page, filters],
+    queryKey: ['findings', page, filters, sort],
     queryFn: () =>
       findingsApi.list(page, 20, {
         status: filters.status,
         risk_level: filters.risk_level,
         search: filters.search,
+        sort_by: sort.sortBy,
+        sort_order: sort.sortOrder,
       }),
   })
 
@@ -33,6 +39,15 @@ export default function AllFindingsPage() {
 
   const handleSearchChange = (search: string) => {
     setFilters({ ...filters, search: search || undefined })
+    setPage(1)
+  }
+
+  const handleSortChange = (column: string) => {
+    if (sort.sortBy === column) {
+      setSort({ ...sort, sortOrder: sort.sortOrder === 'asc' ? 'desc' : 'asc' })
+    } else {
+      setSort({ sortBy: column, sortOrder: 'asc' })
+    }
     setPage(1)
   }
 
@@ -91,6 +106,9 @@ export default function AllFindingsPage() {
             onPageChange={setPage}
             onFindingIgnore={() => refetch()}
             onFindingUnignore={() => refetch()}
+            sortBy={sort.sortBy}
+            sortOrder={sort.sortOrder}
+            onSortChange={handleSortChange}
           />
         )}
       </div>

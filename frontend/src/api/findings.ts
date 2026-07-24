@@ -21,6 +21,7 @@ export const findingsApi = {
       connection_id?: string
       search?: string
       sort_by?: string
+      sort_order?: string
     }
   ): Promise<FindingsListResponse> {
     const params: any = { page, page_size: pageSize }

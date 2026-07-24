@@ -12,7 +12,19 @@ interface FindingsTableProps {
   onPageChange: (page: number) => void
   onFindingIgnore?: (id: string) => void
   onFindingUnignore?: (id: string) => void
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  onSortChange?: (column: string) => void
 }
+
+const SORTABLE_COLUMNS = [
+  { key: 'priority_rank', label: 'Priority' },
+  { key: 'category', label: 'Category' },
+  { key: 'region', label: 'Region' },
+  { key: 'savings', label: 'Savings/month' },
+  { key: 'risk_level', label: 'Risk' },
+  { key: 'first_detected_at', label: 'First detected' },
+]
 
 export default function FindingsTable({
   findings,
@@ -22,8 +34,33 @@ export default function FindingsTable({
   onPageChange,
   onFindingIgnore,
   onFindingUnignore,
+  sortBy,
+  sortOrder,
+  onSortChange,
 }: FindingsTableProps) {
   const [ignoringId, setIgnoringId] = useState<string | null>(null)
+
+  const renderSortableHeader = (columnKey: string, label: string) => {
+    const isActive = sortBy === columnKey
+    if (!onSortChange) return <th className="text-left px-6 py-3 font-semibold text-gray-900">{label}</th>
+
+    return (
+      <th
+        className="text-left px-6 py-3 font-semibold text-gray-900 cursor-pointer select-none hover:bg-gray-100"
+        key={columnKey}
+      >
+        <button
+          onClick={() => onSortChange(columnKey)}
+          className="flex items-center gap-2 w-full text-left"
+        >
+          {label}
+          <span className={`text-xs ${isActive ? 'text-gray-600' : 'text-gray-300'}`}>
+            {isActive ? (sortOrder === 'asc' ? '▲' : '▼') : '◇'}
+          </span>
+        </button>
+      </th>
+    )
+  }
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -63,14 +100,14 @@ export default function FindingsTable({
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">Priority</th>
+              {renderSortableHeader('priority_rank', 'Priority')}
               <th className="text-left px-6 py-3 font-semibold text-gray-900">Finding</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">Category</th>
+              {renderSortableHeader('category', 'Category')}
               <th className="text-left px-6 py-3 font-semibold text-gray-900">Resource</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">Region</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">Savings/month</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">Risk</th>
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">First detected</th>
+              {renderSortableHeader('region', 'Region')}
+              {renderSortableHeader('savings', 'Savings/month')}
+              {renderSortableHeader('risk_level', 'Risk')}
+              {renderSortableHeader('first_detected_at', 'First detected')}
               <th className="text-left px-6 py-3 font-semibold text-gray-900">Actions</th>
             </tr>
           </thead>
