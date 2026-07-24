@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
 from app.models.scan import Scan
 from app.models.connection import Connection
-from app.models.enums import ScanStatus, ConnectionStatus
+from app.models.enums import ScanStatus
 from app.services.aws.sts import assume_role_session
 from app.services.checks.registry import get_all_checks
 from app.services.checks.base import CheckContext
@@ -40,8 +40,6 @@ def run_scan_task(scan_id: str) -> None:
             scan.status = ScanStatus.FAILED
             scan.error_message = str(e)
             scan.finished_at = datetime.utcnow()
-            connection.status = ConnectionStatus.ERROR
-            connection.last_test_error = str(e)
             db.commit()
             return
 
