@@ -1,23 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { findingsApi } from '../../api/findings'
 import FindingsTable from '../../components/findings/FindingsTable'
 
+const STORAGE_KEY = 'findings_filters'
+
 export default function AllFindingsPage() {
-  const [page, setPage] = useState(1)
-  const [filters, setFilters] = useState<{
-    status?: string
-    risk_level?: string
-    category?: string
-    resource_group?: string
-    search?: string
-  }>({})
-  const [sort, setSort] = useState<{ sortBy: string; sortOrder: 'asc' | 'desc' }>({
-    sortBy: 'priority_rank',
-    sortOrder: 'asc',
-  })
+  const [searchParams, setSearchParams] = useSearchParams()
   const [openFilterType, setOpenFilterType] = useState<string | null>(null)
   const [tempFilterValue, setTempFilterValue] = useState('')
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  // On mount: restore filters from localStorage if URL is clean
+  useEffect(() => {
+    if (!isInitialized) {
+      const hasUrlParams = searchParams.toString().length > 0
+      if (!hasUrlParams) {
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (saved) {
+          setSearchParams(new URLSearchParams(saved))
+        }
+      }
+      setIsInitialized(true)
+    }
+  }, [])
+
+  // Whenever URL params change, save to localStorage
+  useEffect(() => {
+    if (isInitialized) {
+      const paramString = searchParams.toString()
+      if (paramString) {
+        localStorage.setItem(STORAGE_KEY, paramString)
+      } else {
+        localStorage.removeItem(STORAGE_KEY)
+      }
+    }
+  }, [searchParams, isInitialized])
+
+  const page = Number(searchParams.get('page')) || 1
+  const filters = {
+    status: searchParams.get('status') || undefined,
+    risk_level: searchParams.get('risk_level') || undefined,
+    category: searchParams.get('category') || undefined,
+    resource_group: searchParams.get('resource_group') || undefined,
+    search: searchParams.get('search') || undefined,
+  }
+  const sort = {
+    sortBy: searchParams.get('sort_by') || 'priority_rank',
+    sortOrder: (searchParams.get('sort_order') as 'asc' | 'desc') || 'asc',
+  }
 
   const filterTypes = [
     { key: 'status', label: 'Status', values: { open: 'Open', ignored: 'Ignored', resolved: 'Resolved' } },
@@ -53,8 +85,9 @@ export default function AllFindingsPage() {
   }
 
   const clearAllFilters = () => {
-    setFilters({})
-    setPage(1)
+    const next = new URLSearchParams()
+    next.set('page', '1')
+    setSearchParams(next)
   }
 
   const getActiveFilters = () => {
@@ -69,7 +102,7 @@ export default function AllFindingsPage() {
   }
 
   const { data: findings, refetch } = useQuery({
-    queryKey: ['findings', page, filters, sort],
+    queryKey: ['findings', searchParams.toString()],
     queryFn: () =>
       findingsApi.list(page, 20, {
         status: filters.status,
@@ -82,38 +115,48 @@ export default function AllFindingsPage() {
       }),
   })
 
+  const updateParams = (updates: Record<string, string | undefined>) => {
+    const next = new URLSearchParams(searchParams)
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        next.set(key, value)
+      } else {
+        next.delete(key)
+      }
+    })
+    next.set('page', '1')
+    setSearchParams(next)
+  }
+
   const handleStatusChange = (status: string) => {
-    setFilters({ ...filters, status: status || undefined })
-    setPage(1)
+    updateParams({ status: status || undefined })
   }
 
   const handleRiskChange = (risk: string) => {
-    setFilters({ ...filters, risk_level: risk || undefined })
-    setPage(1)
+    updateParams({ risk_level: risk || undefined })
   }
 
   const handleSearchChange = (search: string) => {
-    setFilters({ ...filters, search: search || undefined })
-    setPage(1)
+    updateParams({ search: search || undefined })
   }
 
   const handleCategoryChange = (category: string) => {
-    setFilters({ ...filters, category: category || undefined })
-    setPage(1)
+    updateParams({ category: category || undefined })
   }
 
   const handleResourceGroupChange = (resourceGroup: string) => {
-    setFilters({ ...filters, resource_group: resourceGroup || undefined })
-    setPage(1)
+    updateParams({ resource_group: resourceGroup || undefined })
   }
 
   const handleSortChange = (column: string) => {
-    if (sort.sortBy === column) {
-      setSort({ ...sort, sortOrder: sort.sortOrder === 'asc' ? 'desc' : 'asc' })
-    } else {
-      setSort({ sortBy: column, sortOrder: 'asc' })
-    }
-    setPage(1)
+    const newSortOrder = sort.sortBy === column && sort.sortOrder === 'asc' ? 'desc' : 'asc'
+    updateParams({ sort_by: column, sort_order: newSortOrder })
+  }
+
+  const handlePageChange = (newPage: number) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('page', String(newPage))
+    setSearchParams(next)
   }
 
   return (
@@ -246,7 +289,7 @@ export default function AllFindingsPage() {
             total={findings.total}
             page={page}
             pageSize={20}
-            onPageChange={setPage}
+            onPageChange={handlePageChange}
             onFindingIgnore={() => refetch()}
             onFindingUnignore={() => refetch()}
             sortBy={sort.sortBy}
