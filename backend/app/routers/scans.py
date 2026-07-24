@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.db.base import get_db
@@ -9,6 +9,7 @@ from app.models.workspace import Workspace
 from app.models.enums import ScanStatus, ConnectionStatus, ScanTrigger
 from app.schemas.scan import ScanResponse, ScanListResponse
 from app.services.scan_orchestrator import run_scan_task
+from app.services.plan_service import can_run_manual_scan, get_plan_details
 
 router = APIRouter(prefix="/api", tags=["scans"])
 
@@ -42,6 +43,18 @@ def trigger_scan(
             detail="At least one region must be selected in Settings",
         )
 
+    today = date.today()
+    if workspace.last_manual_scan_date != today:
+        workspace.manual_scans_today = 0
+        workspace.last_manual_scan_date = today
+
+    if not can_run_manual_scan(workspace.plan, workspace.manual_scans_today):
+        plan_details = get_plan_details(workspace.plan)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Manual scan limit ({plan_details.manual_scans_per_day_limit}/day) reached for your {plan_details.name} plan",
+        )
+
     scan = Scan(
         id=str(uuid.uuid4()),
         workspace_id=1,
@@ -52,6 +65,7 @@ def trigger_scan(
         started_at=datetime.utcnow(),
     )
     db.add(scan)
+    workspace.manual_scans_today += 1
     db.commit()
     db.refresh(scan)
 

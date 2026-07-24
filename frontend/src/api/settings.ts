@@ -15,6 +15,14 @@ export const settingsApi = {
     return data
   },
 
+  async updateScanSchedule(scheduled_scans_enabled: boolean, scan_frequency: string): Promise<Settings> {
+    const { data } = await apiClient.put('/settings/scan-schedule', {
+      scheduled_scans_enabled,
+      scan_frequency,
+    })
+    return data
+  },
+
   async getRegions(): Promise<{ regions: string[] }> {
     const { data } = await apiClient.get('/meta/regions')
     return data
