@@ -8,6 +8,8 @@ export default function AllFindingsPage() {
   const [filters, setFilters] = useState<{
     status?: string
     risk_level?: string
+    category?: string
+    resource_group?: string
     search?: string
   }>({})
   const [sort, setSort] = useState<{ sortBy: string; sortOrder: 'asc' | 'desc' }>({
@@ -21,6 +23,8 @@ export default function AllFindingsPage() {
       findingsApi.list(page, 20, {
         status: filters.status,
         risk_level: filters.risk_level,
+        category: filters.category,
+        resource_group: filters.resource_group,
         search: filters.search,
         sort_by: sort.sortBy,
         sort_order: sort.sortOrder,
@@ -42,6 +46,16 @@ export default function AllFindingsPage() {
     setPage(1)
   }
 
+  const handleCategoryChange = (category: string) => {
+    setFilters({ ...filters, category: category || undefined })
+    setPage(1)
+  }
+
+  const handleResourceGroupChange = (resourceGroup: string) => {
+    setFilters({ ...filters, resource_group: resourceGroup || undefined })
+    setPage(1)
+  }
+
   const handleSortChange = (column: string) => {
     if (sort.sortBy === column) {
       setSort({ ...sort, sortOrder: sort.sortOrder === 'asc' ? 'desc' : 'asc' })
@@ -56,7 +70,7 @@ export default function AllFindingsPage() {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">All findings</h1>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
@@ -82,6 +96,31 @@ export default function AllFindingsPage() {
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <select
+              value={filters.category || ''}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 w-full"
+            >
+              <option value="">All</option>
+              <option value="cost">Cost</option>
+              <option value="security">Security</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Resource group</label>
+            <select
+              value={filters.resource_group || ''}
+              onChange={(e) => handleResourceGroupChange(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 w-full"
+            >
+              <option value="">All</option>
+              <option value="storage">Storage</option>
+              <option value="network">Network</option>
+              <option value="compute">Compute</option>
             </select>
           </div>
           <div className="md:col-span-2">

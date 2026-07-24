@@ -5,8 +5,6 @@ import OverviewPage from './pages/scan/OverviewPage'
 import ScanHistoryPage from './pages/scan/ScanHistoryPage'
 import SchedulesPage from './pages/scan/SchedulesPage'
 import AllFindingsPage from './pages/findings/AllFindingsPage'
-import ByResourcePage from './pages/findings/ByResourcePage'
-import ByCategoryPage from './pages/findings/ByCategoryPage'
 import ConnectionsListPage from './pages/connections/ConnectionsListPage'
 import NewConnectionPage from './pages/connections/NewConnectionPage'
 import PreferencesPage from './pages/settings/PreferencesPage'
@@ -32,8 +30,6 @@ function App() {
             <Route path="scan-history" element={<ScanHistoryPage />} />
             <Route path="schedules" element={<SchedulesPage />} />
             <Route path="findings" element={<AllFindingsPage />} />
-            <Route path="findings-resource" element={<ByResourcePage />} />
-            <Route path="findings-category" element={<ByCategoryPage />} />
             <Route path="connections" element={<ConnectionsListPage />} />
             <Route path="connections/new" element={<NewConnectionPage />} />
             <Route path="connections/:id/edit" element={<NewConnectionPage />} />
