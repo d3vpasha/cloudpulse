@@ -17,7 +17,6 @@ export default function Sidebar() {
         <NavItem label="All findings" icon="🔍" href="/findings" />
         <NavItem label="By resource" icon="📦" href="/findings-resource" />
         <NavItem label="By category" icon="🏷️" href="/findings-category" />
-        <NavItem label="Ignored" icon="🚫" href="/findings-ignored" />
 
         <div className="text-xs font-semibold text-gray-500 uppercase px-4 py-2 mt-4">Configuration</div>
         <NavItem label="Connections" icon="🔗" href="/connections" />

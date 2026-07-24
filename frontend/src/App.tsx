@@ -7,7 +7,6 @@ import SchedulesPage from './pages/scan/SchedulesPage'
 import AllFindingsPage from './pages/findings/AllFindingsPage'
 import ByResourcePage from './pages/findings/ByResourcePage'
 import ByCategoryPage from './pages/findings/ByCategoryPage'
-import IgnoredPage from './pages/findings/IgnoredPage'
 import ConnectionsListPage from './pages/connections/ConnectionsListPage'
 import NewConnectionPage from './pages/connections/NewConnectionPage'
 import PreferencesPage from './pages/settings/PreferencesPage'
@@ -35,7 +34,6 @@ function App() {
             <Route path="findings" element={<AllFindingsPage />} />
             <Route path="findings-resource" element={<ByResourcePage />} />
             <Route path="findings-category" element={<ByCategoryPage />} />
-            <Route path="findings-ignored" element={<IgnoredPage />} />
             <Route path="connections" element={<ConnectionsListPage />} />
             <Route path="connections/new" element={<NewConnectionPage />} />
             <Route path="connections/:id/edit" element={<NewConnectionPage />} />
