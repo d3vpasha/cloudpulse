@@ -58,8 +58,8 @@ export interface FindingSummary {
 export interface Settings {
   active_providers: string[]
   active_regions: string[]
-  scheduled_scans_enabled: boolean
   scan_frequency: string
+  plan_name: string
   next_scheduled_scan_at: string | null
   manual_scans_today: number
   manual_scans_limit: number | null

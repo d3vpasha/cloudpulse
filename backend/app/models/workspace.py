@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, Boolean, Date
+from sqlalchemy import Column, Integer, String, DateTime, JSON, Date
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -11,8 +11,6 @@ class Workspace(Base):
     active_providers = Column(JSON, default=["aws"])
     active_regions = Column(JSON, default=["us-east-1"])
     plan = Column(String, default="FREE")
-    scheduled_scans_enabled = Column(Boolean, default=True)
-    scan_frequency = Column(String, default="DAILY")
     last_scheduled_scan_at = Column(DateTime)
     next_scheduled_scan_at = Column(DateTime)
     manual_scans_today = Column(Integer, default=0)

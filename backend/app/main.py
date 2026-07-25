@@ -42,10 +42,6 @@ def run_migrations():
     with engine.connect() as conn:
         if 'plan' not in workspaces_columns:
             conn.execute(text('ALTER TABLE workspaces ADD COLUMN plan TEXT DEFAULT "FREE"'))
-        if 'scheduled_scans_enabled' not in workspaces_columns:
-            conn.execute(text('ALTER TABLE workspaces ADD COLUMN scheduled_scans_enabled BOOLEAN DEFAULT 1'))
-        if 'scan_frequency' not in workspaces_columns:
-            conn.execute(text('ALTER TABLE workspaces ADD COLUMN scan_frequency TEXT DEFAULT "DAILY"'))
         if 'last_scheduled_scan_at' not in workspaces_columns:
             conn.execute(text('ALTER TABLE workspaces ADD COLUMN last_scheduled_scan_at DATETIME'))
         if 'next_scheduled_scan_at' not in workspaces_columns:

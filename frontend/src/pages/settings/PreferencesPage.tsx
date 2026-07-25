@@ -5,8 +5,6 @@ import { settingsApi } from '../../api/settings'
 export default function PreferencesPage() {
   const [providers, setProviders] = useState<string[]>(['aws'])
   const [regions, setRegions] = useState<string[]>(['us-east-1'])
-  const [scheduledScansEnabled, setScheduledScansEnabled] = useState(true)
-  const [scanFrequency, setScanFrequency] = useState('DAILY')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [expandedProvider, setExpandedProvider] = useState<string>('')
@@ -25,8 +23,6 @@ export default function PreferencesPage() {
     if (settings) {
       setProviders(settings.active_providers)
       setRegions(settings.active_regions)
-      setScheduledScansEnabled(settings.scheduled_scans_enabled)
-      setScanFrequency(settings.scan_frequency)
     }
   }, [settings])
 
@@ -43,17 +39,10 @@ export default function PreferencesPage() {
     setLoading(false)
   }
 
-  const handleSaveScanSchedule = async () => {
-    setLoading(true)
-    setSaved(false)
-    try {
-      await settingsApi.updateScanSchedule(scheduledScansEnabled, scanFrequency)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch (error) {
-      console.error('Failed to save scan schedule', error)
-    }
-    setLoading(false)
+  const frequencyLabel = {
+    'DAILY': 'Daily',
+    'EVERY_6H': 'Every 6 hours',
+    'HOURLY': 'Hourly',
   }
 
   const nextScanTime = settings?.next_scheduled_scan_at ? new Date(settings.next_scheduled_scan_at).toLocaleString() : 'Not scheduled'
@@ -203,33 +192,11 @@ export default function PreferencesPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Scan Schedule</h2>
           <div className="space-y-4">
             <div>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={scheduledScansEnabled}
-                  onChange={(e) => setScheduledScansEnabled(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                <span className="ml-2 text-gray-900 font-medium">Enable scheduled scans</span>
-              </label>
-              <p className="text-sm text-gray-600 mt-2 ml-6">Automatically scan your connections on a regular schedule</p>
+              <p className="text-sm text-gray-700 mb-2">
+                Scheduled scans run <span className="font-medium">{frequencyLabel[settings?.scan_frequency as keyof typeof frequencyLabel] || 'Daily'}</span> (included in your <span className="font-medium">{settings?.plan_name || 'Free'}</span> plan)
+              </p>
+              <p className="text-sm text-gray-600">Next scheduled scan: {nextScanTime}</p>
             </div>
-
-            {scheduledScansEnabled && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Scan Frequency</label>
-                <select
-                  value={scanFrequency}
-                  onChange={(e) => setScanFrequency(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full"
-                >
-                  <option value="DAILY">Daily</option>
-                  <option value="EVERY_6H">Every 6 hours</option>
-                  <option value="HOURLY">Hourly</option>
-                </select>
-                <p className="text-sm text-gray-600 mt-2">Next scheduled scan: {nextScanTime}</p>
-              </div>
-            )}
 
             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
               <p>Manual scans used today: <span className="font-semibold">{manualScansUsed}/{manualScansLimit}</span></p>
@@ -251,13 +218,6 @@ export default function PreferencesPage() {
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Save provider settings'}
-          </button>
-          <button
-            onClick={handleSaveScanSchedule}
-            disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : 'Save scan schedule'}
           </button>
         </div>
       </div>
