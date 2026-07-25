@@ -9,6 +9,7 @@ from app.models.scan import Scan
 from app.models.finding import Finding
 from app.routers import connections, scans, findings, dashboard, settings as settings_router, meta
 from app.services.scheduler import start_scheduler, stop_scheduler
+from app.services.aws.identity import validate_aws_credentials
 
 app = FastAPI(
     title="CloudPulse API",
@@ -69,6 +70,9 @@ def init_workspace():
         db.close()
 
 init_workspace()
+
+# Validate AWS credentials are available before starting
+validate_aws_credentials()
 
 app.include_router(connections.router)
 app.include_router(scans.router)
