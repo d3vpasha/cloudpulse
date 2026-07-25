@@ -9,7 +9,7 @@ export default function PreferencesPage() {
   const [scanFrequency, setScanFrequency] = useState('DAILY')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [expandedProvider, setExpandedProvider] = useState<string>('aws')
+  const [expandedProvider, setExpandedProvider] = useState<string>('')
 
   const { data: settings } = useQuery({
     queryKey: ['settings'],
@@ -132,39 +132,69 @@ export default function PreferencesPage() {
             </div>
 
             {/* GCP Provider */}
-            <div className="flex items-center p-3 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed">
-              <input
-                type="checkbox"
-                id="provider-gcp"
-                disabled
-                checked={false}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="provider-gcp" className="ml-4 text-gray-900 flex items-center flex-1">
-                <img src="https://koul.io/images/tech/tech-gcp.svg" alt="GCP" className="h-10 w-10 object-contain" />
-                <div className="ml-4">
-                  <span className="font-medium block">GCP</span>
-                  <p className="text-sm text-gray-600">(coming soon)</p>
+            <div>
+              <div className="flex items-center p-3 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed hover:bg-gray-50" onClick={() => setExpandedProvider(expandedProvider === 'gcp' ? '' : 'gcp')}>
+                <input
+                  type="checkbox"
+                  id="provider-gcp"
+                  disabled
+                  checked={false}
+                  className="rounded border-gray-300"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <label htmlFor="provider-gcp" className="ml-4 text-gray-900 flex items-center flex-1 cursor-not-allowed">
+                  <img src="https://koul.io/images/tech/tech-gcp.svg" alt="GCP" className="h-10 w-10 object-contain" />
+                  <div className="ml-4">
+                    <span className="font-medium block">GCP</span>
+                    <p className="text-sm text-gray-600">(coming soon)</p>
+                  </div>
+                </label>
+                <span className="text-gray-400 ml-2 transition-transform" style={{ transform: expandedProvider === 'gcp' ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  ▼
+                </span>
+              </div>
+
+              {expandedProvider === 'gcp' && (
+                <div className="p-4 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg opacity-50">
+                  <p className="text-sm text-gray-600 mb-4">Select the regions to scan for findings:</p>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    <p className="text-sm text-gray-600">Regions will be available when GCP support is enabled.</p>
+                  </div>
                 </div>
-              </label>
+              )}
             </div>
 
             {/* Azure Provider */}
-            <div className="flex items-center p-3 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed">
-              <input
-                type="checkbox"
-                id="provider-azure"
-                disabled
-                checked={false}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="provider-azure" className="ml-4 text-gray-900 flex items-center flex-1">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/960px-Microsoft_logo.svg.png" alt="Azure" className="h-10 w-10 object-contain" />
-                <div className="ml-4">
-                  <span className="font-medium block">Azure</span>
-                  <p className="text-sm text-gray-600">(coming soon)</p>
+            <div>
+              <div className="flex items-center p-3 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed hover:bg-gray-50" onClick={() => setExpandedProvider(expandedProvider === 'azure' ? '' : 'azure')}>
+                <input
+                  type="checkbox"
+                  id="provider-azure"
+                  disabled
+                  checked={false}
+                  className="rounded border-gray-300"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <label htmlFor="provider-azure" className="ml-4 text-gray-900 flex items-center flex-1 cursor-not-allowed">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/960px-Microsoft_logo.svg.png" alt="Azure" className="h-10 w-10 object-contain" />
+                  <div className="ml-4">
+                    <span className="font-medium block">Azure</span>
+                    <p className="text-sm text-gray-600">(coming soon)</p>
+                  </div>
+                </label>
+                <span className="text-gray-400 ml-2 transition-transform" style={{ transform: expandedProvider === 'azure' ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  ▼
+                </span>
+              </div>
+
+              {expandedProvider === 'azure' && (
+                <div className="p-4 bg-gray-50 border border-t-0 border-gray-200 rounded-b-lg opacity-50">
+                  <p className="text-sm text-gray-600 mb-4">Select the regions to scan for findings:</p>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    <p className="text-sm text-gray-600">Regions will be available when Azure support is enabled.</p>
+                  </div>
                 </div>
-              </label>
+              )}
             </div>
           </div>
         </div>
