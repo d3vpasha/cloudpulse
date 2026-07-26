@@ -4,6 +4,24 @@ import Pagination from '../common/Pagination'
 import { useState } from 'react'
 import { findingsApi } from '../../api/findings'
 
+function CopyIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-3.5 h-3.5"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
+
 interface FindingsTableProps {
   findings: Finding[]
   total: number
@@ -144,6 +162,15 @@ export default function FindingsTable({
                     >
                       {finding.resource_id}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`resource-${finding.id}`, finding.resource_id)}
+                      className="inline-flex items-center justify-center text-gray-400 hover:text-blue-600 ml-1.5 bg-transparent border-0 p-0 cursor-pointer align-middle"
+                      title="Copy to clipboard"
+                      aria-label="Copy"
+                    >
+                      <CopyIcon />
+                    </button>
                     {copiedField === `resource-${finding.id}` && (
                       <span className="text-xs text-gray-500 ml-2">Copied</span>
                     )}
@@ -158,6 +185,15 @@ export default function FindingsTable({
                           title="Click to copy"
                         >
                           {finding.aws_account_id}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`account-${finding.id}`, finding.aws_account_id)}
+                          className="inline-flex items-center justify-center text-gray-400 hover:text-blue-600 ml-1.5 bg-transparent border-0 p-0 cursor-pointer align-middle"
+                          title="Copy to clipboard"
+                          aria-label="Copy"
+                        >
+                          <CopyIcon />
                         </button>
                         {copiedField === `account-${finding.id}` && (
                           <span className="text-xs text-gray-500 ml-2">Copied</span>
@@ -175,6 +211,15 @@ export default function FindingsTable({
                       title="Click to copy"
                     >
                       {finding.region}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`region-${finding.id}`, finding.region)}
+                      className="inline-flex items-center justify-center text-gray-400 hover:text-blue-600 ml-1.5 bg-transparent border-0 p-0 cursor-pointer align-middle"
+                      title="Copy to clipboard"
+                      aria-label="Copy"
+                    >
+                      <CopyIcon />
                     </button>
                     {copiedField === `region-${finding.id}` && (
                       <span className="text-xs text-gray-500 ml-2">Copied</span>
