@@ -104,6 +104,7 @@ export default function FindingsTable({
               <th className="text-left px-6 py-3 font-semibold text-gray-900">Finding</th>
               {renderSortableHeader('category', 'Category')}
               <th className="text-left px-6 py-3 font-semibold text-gray-900">Resource</th>
+              <th className="text-left px-6 py-3 font-semibold text-gray-900">AWS Account</th>
               {renderSortableHeader('region', 'Region')}
               {renderSortableHeader('savings', 'Savings/month')}
               {renderSortableHeader('risk_level', 'Risk')}
@@ -114,7 +115,7 @@ export default function FindingsTable({
           <tbody>
             {findings.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-gray-600">
+                <td colSpan={10} className="text-center py-8 text-gray-600">
                   No findings found
                 </td>
               </tr>
@@ -132,6 +133,7 @@ export default function FindingsTable({
                       {finding.resource_id}
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-xs text-gray-600">{finding.aws_account_id || '-'}</td>
                   <td className="px-6 py-4">{finding.region}</td>
                   <td className="px-6 py-4 font-medium text-green-600">
                     ${finding.estimated_monthly_savings.toFixed(2)}
