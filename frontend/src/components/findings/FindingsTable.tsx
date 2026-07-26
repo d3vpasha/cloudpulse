@@ -108,7 +108,7 @@ export default function FindingsTable({
           <thead className="bg-gray-50 border-b">
             <tr>
               {renderSortableHeader('priority_rank', 'Priority')}
-              <th className="text-left px-6 py-3 font-semibold text-gray-900">Finding</th>
+              <th className="text-left px-6 py-3 font-semibold text-gray-900 min-w-[320px]">Finding</th>
               {renderSortableHeader('category', 'Category')}
               <th className="text-left px-6 py-3 font-semibold text-gray-900">Resource</th>
               <th className="text-left px-6 py-3 font-semibold text-gray-900">AWS Account</th>
