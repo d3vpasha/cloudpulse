@@ -39,6 +39,7 @@ export default function FindingsTable({
   onSortChange,
 }: FindingsTableProps) {
   const [ignoringId, setIgnoringId] = useState<string | null>(null)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const renderSortableHeader = (columnKey: string, label: string) => {
     const isActive = sortBy === columnKey
@@ -94,6 +95,12 @@ export default function FindingsTable({
     setIgnoringId(null)
   }
 
+  const handleCopy = async (fieldId: string, value: string) => {
+    await navigator.clipboard.writeText(value)
+    setCopiedField(fieldId)
+    setTimeout(() => setCopiedField(null), 1500)
+  }
+
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto">
@@ -122,19 +129,57 @@ export default function FindingsTable({
             ) : (
               findings.map((finding) => (
                 <tr key={finding.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4">{finding.priority_rank}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{finding.priority_rank}</td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{finding.title}</div>
                     <div className="text-xs text-gray-600 mt-1">{finding.description}</div>
                   </td>
-                  <td className="px-6 py-4 capitalize">{finding.category}</td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                  <td className="px-6 py-4 capitalize text-sm text-gray-900">{finding.category}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`resource-${finding.id}`, finding.resource_id)}
+                      className="bg-transparent border-0 p-0 cursor-pointer hover:underline"
+                      title="Click to copy"
+                    >
                       {finding.resource_id}
-                    </div>
+                    </button>
+                    {copiedField === `resource-${finding.id}` && (
+                      <span className="text-xs text-gray-500 ml-2">Copied</span>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-xs text-gray-600">{finding.aws_account_id || '-'}</td>
-                  <td className="px-6 py-4">{finding.region}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                    {finding.aws_account_id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`account-${finding.id}`, finding.aws_account_id)}
+                          className="bg-transparent border-0 p-0 cursor-pointer hover:underline"
+                          title="Click to copy"
+                        >
+                          {finding.aws_account_id}
+                        </button>
+                        {copiedField === `account-${finding.id}` && (
+                          <span className="text-xs text-gray-500 ml-2">Copied</span>
+                        )}
+                      </>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`region-${finding.id}`, finding.region)}
+                      className="bg-transparent border-0 p-0 cursor-pointer hover:underline"
+                      title="Click to copy"
+                    >
+                      {finding.region}
+                    </button>
+                    {copiedField === `region-${finding.id}` && (
+                      <span className="text-xs text-gray-500 ml-2">Copied</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 font-medium text-green-600">
                     ${finding.estimated_monthly_savings.toFixed(2)}
                   </td>
@@ -143,7 +188,7 @@ export default function FindingsTable({
                       {finding.risk_level.toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-xs text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-900">
                     {new Date(finding.first_detected_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
