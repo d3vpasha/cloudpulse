@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { settingsApi } from '../../api/settings'
+import Modal from '../../components/common/Modal'
 
 export default function PreferencesPage() {
+  const navigate = useNavigate()
   const [providers, setProviders] = useState<string[]>(['aws'])
   const [regions, setRegions] = useState<string[]>(['us-east-1'])
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [expandedProvider, setExpandedProvider] = useState<string>('')
+  const [showPlansModal, setShowPlansModal] = useState(false)
 
   const { data: settings } = useQuery({
     queryKey: ['settings'],
@@ -17,6 +21,11 @@ export default function PreferencesPage() {
   const { data: regionsList } = useQuery({
     queryKey: ['regions'],
     queryFn: () => settingsApi.getRegions(),
+  })
+
+  const { data: plansList } = useQuery({
+    queryKey: ['plans'],
+    queryFn: () => settingsApi.getPlans(),
   })
 
   useEffect(() => {
@@ -39,17 +48,57 @@ export default function PreferencesPage() {
     setLoading(false)
   }
 
-  const frequencyLabel = {
+  const frequencyLabel: Record<string, string> = {
     'DAILY': 'Daily',
     'EVERY_6H': 'Every 6 hours',
     'HOURLY': 'Hourly',
   }
 
-  const nextScanTime = settings?.next_scheduled_scan_at ? new Date(settings.next_scheduled_scan_at).toLocaleString() : 'Not scheduled'
+  const frequencyDescription: Record<string, string> = {
+    'DAILY': 'Scans run daily at midnight (00:00 UTC)',
+    'EVERY_6H': 'Scans run every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)',
+    'HOURLY': 'Scans run every hour, on the hour',
+  }
+
   const manualScansUsed = settings?.manual_scans_today || 0
   const manualScansLimit = settings?.manual_scans_limit === null ? '∞' : settings?.manual_scans_limit
 
   const allRegions = regionsList?.regions || {}
+
+  const scanScheduleMessage = () => {
+    if (!settings?.has_active_connection) {
+      return (
+        <div className="text-sm text-gray-700">
+          <p>
+            <button
+              onClick={() => navigate('/connections')}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              Add a cloud connection
+            </button>
+            {' '}to start scheduled scans
+          </p>
+        </div>
+      )
+    }
+
+    if (settings?.next_scheduled_scan_at) {
+      return (
+        <div className="text-sm text-gray-700">
+          <p className="mb-1">{frequencyDescription[settings.scan_frequency] || 'Scans are scheduled'}</p>
+          <p className="text-gray-600">
+            Next scheduled scan: {new Date(settings.next_scheduled_scan_at).toLocaleString()}
+          </p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="text-sm text-gray-700">
+        <p>Scheduling your first scan…</p>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
@@ -194,8 +243,15 @@ export default function PreferencesPage() {
             <div>
               <p className="text-sm text-gray-700 mb-2">
                 Scheduled scans run <span className="font-medium">{frequencyLabel[settings?.scan_frequency as keyof typeof frequencyLabel] || 'Daily'}</span> (included in your <span className="font-medium">{settings?.plan_name || 'Free'}</span> plan)
+                {' '}
+                <button
+                  onClick={() => setShowPlansModal(true)}
+                  className="text-blue-600 hover:text-blue-800 underline text-sm"
+                >
+                  See our other plans
+                </button>
               </p>
-              <p className="text-sm text-gray-600">Next scheduled scan: {nextScanTime}</p>
+              {scanScheduleMessage()}
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
@@ -221,6 +277,49 @@ export default function PreferencesPage() {
           </button>
         </div>
       </div>
+
+      <Modal open={showPlansModal} onClose={() => setShowPlansModal(false)}>
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-gray-900">Compare Plans</h3>
+          <div className="space-y-4">
+            {plansList?.plans.map((plan) => (
+              <div
+                key={plan.key}
+                className={`p-4 border rounded-lg ${
+                  plan.name === settings?.plan_name
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 bg-white'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">
+                      {plan.name}
+                      {plan.name === settings?.plan_name && (
+                        <span className="ml-2 inline-block bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                          Current Plan
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Scan frequency: <span className="font-medium">{frequencyLabel[plan.scan_frequency]}</span>
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Manual scans per day:{' '}
+                      <span className="font-medium">
+                        {plan.manual_scans_per_day_limit === null ? '∞' : plan.manual_scans_per_day_limit}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t pt-4 text-sm text-gray-500">
+            Need something beyond these plans? Contact our sales team to discuss custom limits.
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

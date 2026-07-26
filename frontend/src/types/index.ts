@@ -28,6 +28,8 @@ export interface Scan {
 export interface Finding {
   id: string
   check_type: string
+  finding_code: string | null
+  aws_account_id: string | null
   category: 'cost' | 'security'
   resource_group: 'storage' | 'network' | 'compute'
   resource_type: string
@@ -60,9 +62,17 @@ export interface Settings {
   active_regions: string[]
   scan_frequency: string
   plan_name: string
+  has_active_connection: boolean
   next_scheduled_scan_at: string | null
   manual_scans_today: number
   manual_scans_limit: number | null
+}
+
+export interface PlanDetails {
+  key: string
+  name: string
+  scan_frequency: string
+  manual_scans_per_day_limit: number | null
 }
 
 export interface DashboardOverview {

@@ -7,7 +7,7 @@ from app.models.connection import Connection
 from app.models.scan import Scan
 from app.models.enums import ScanStatus, ScanTrigger, ConnectionStatus
 from app.services.scan_orchestrator import run_scan_task
-from app.services.plan_service import get_frequency_minutes, get_plan_details
+from app.services.plan_service import get_plan_details, get_next_aligned_scan_time
 import uuid
 
 scheduler = BackgroundScheduler()
@@ -45,8 +45,7 @@ def check_and_run_scheduled_scans():
 
         workspace.last_scheduled_scan_at = datetime.utcnow()
         plan_details = get_plan_details(workspace.plan)
-        minutes = get_frequency_minutes(plan_details.scan_frequency)
-        workspace.next_scheduled_scan_at = datetime.utcnow() + timedelta(minutes=minutes)
+        workspace.next_scheduled_scan_at = get_next_aligned_scan_time(plan_details.scan_frequency, datetime.utcnow())
         db.commit()
 
         for connection in connections:
@@ -67,7 +66,7 @@ def start_scheduler():
     if not scheduler.running:
         scheduler.add_job(
             check_and_run_scheduled_scans,
-            IntervalTrigger(hours=1),
+            IntervalTrigger(minutes=15),
             id="check_scheduled_scans",
             replace_existing=True,
         )

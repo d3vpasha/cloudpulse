@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.base import get_db
 from app.schemas.settings import SettingsResponse, SettingsUpdate
-from app.services.settings_service import get_settings, update_settings
+from app.services.settings_service import get_settings, update_settings, has_active_connection
 from app.services.plan_service import get_plan_details
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
@@ -17,6 +17,7 @@ def get_workspace_settings(db: Session = Depends(get_db)):
         active_regions=workspace.active_regions,
         scan_frequency=plan_details.scan_frequency,
         plan_name=plan_details.name,
+        has_active_connection=has_active_connection(db),
         next_scheduled_scan_at=workspace.next_scheduled_scan_at,
         manual_scans_today=workspace.manual_scans_today,
         manual_scans_limit=plan_details.manual_scans_per_day_limit,
@@ -35,6 +36,7 @@ def update_workspace_settings(
             active_regions=workspace.active_regions,
             scan_frequency=plan_details.scan_frequency,
             plan_name=plan_details.name,
+            has_active_connection=has_active_connection(db),
             next_scheduled_scan_at=workspace.next_scheduled_scan_at,
             manual_scans_today=workspace.manual_scans_today,
             manual_scans_limit=plan_details.manual_scans_per_day_limit,

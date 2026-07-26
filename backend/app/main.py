@@ -10,6 +10,9 @@ from app.models.finding import Finding
 from app.routers import connections, scans, findings, dashboard, settings as settings_router, meta
 from app.services.scheduler import start_scheduler, stop_scheduler
 from app.services.aws.identity import validate_aws_credentials
+from app.services.plan_service import get_plan_details, is_aligned_scan_time
+from app.models.finding import compute_dedup_hash, Finding
+from app.models.enums import FindingStatus
 
 app = FastAPI(
     title="CloudPulse API",
@@ -52,6 +55,16 @@ def run_migrations():
             conn.execute(text('ALTER TABLE workspaces ADD COLUMN last_manual_scan_date DATE'))
         conn.commit()
 
+    findings_columns = [col['name'] for col in inspector.get_columns('findings')]
+    with engine.connect() as conn:
+        if 'aws_account_id' not in findings_columns:
+            conn.execute(text('ALTER TABLE findings ADD COLUMN aws_account_id TEXT'))
+        if 'finding_code' not in findings_columns:
+            conn.execute(text('ALTER TABLE findings ADD COLUMN finding_code TEXT'))
+        if 'dedup_hash' not in findings_columns:
+            conn.execute(text('ALTER TABLE findings ADD COLUMN dedup_hash TEXT'))
+        conn.commit()
+
 run_migrations()
 
 def init_workspace():
@@ -66,6 +79,94 @@ def init_workspace():
         db.close()
 
 init_workspace()
+
+
+def fix_legacy_scan_schedule():
+    db = SessionLocal()
+    try:
+        workspace = db.query(Workspace).filter(Workspace.id == 1).first()
+        if workspace and workspace.next_scheduled_scan_at:
+            plan_details = get_plan_details(workspace.plan)
+            if not is_aligned_scan_time(plan_details.scan_frequency, workspace.next_scheduled_scan_at):
+                workspace.next_scheduled_scan_at = None
+                db.commit()
+    finally:
+        db.close()
+
+fix_legacy_scan_schedule()
+
+
+def backfill_and_dedupe_findings():
+    from app.services.checks.registry import get_check
+    db = SessionLocal()
+    try:
+        findings = db.query(Finding).filter(Finding.workspace_id == 1).all()
+
+        for finding in findings:
+            if not finding.aws_account_id:
+                if finding.connection_id:
+                    conn = db.query(Connection).filter(Connection.id == finding.connection_id).first()
+                    if conn and conn.aws_account_id:
+                        finding.aws_account_id = conn.aws_account_id
+
+                if not finding.aws_account_id:
+                    fallback_conn = db.query(Connection).filter(
+                        Connection.workspace_id == 1,
+                        Connection.status == 'connected'
+                    ).first()
+                    if fallback_conn and fallback_conn.aws_account_id:
+                        finding.aws_account_id = fallback_conn.aws_account_id
+
+            if not finding.finding_code:
+                check_cls = get_check(finding.check_type)
+                if check_cls:
+                    finding.finding_code = check_cls.finding_code
+
+        db.commit()
+
+        findings = db.query(Finding).filter(Finding.workspace_id == 1).all()
+        for finding in findings:
+            if finding.aws_account_id and finding.finding_code:
+                finding.dedup_hash = compute_dedup_hash(1, finding.aws_account_id, finding.finding_code, finding.resource_id)
+
+        db.commit()
+
+        findings = db.query(Finding).filter(Finding.workspace_id == 1).all()
+        dedup_groups = {}
+        for finding in findings:
+            key = (1, finding.dedup_hash)
+            if key not in dedup_groups:
+                dedup_groups[key] = []
+            dedup_groups[key].append(finding)
+
+        for group in dedup_groups.values():
+            if len(group) > 1:
+                oldest = min(group, key=lambda f: f.first_detected_at)
+                newest = max(group, key=lambda f: f.last_detected_at)
+
+                kept_status = FindingStatus.IGNORED if any(f.status == FindingStatus.IGNORED for f in group) else FindingStatus.OPEN
+                kept_ignored_reason = next((f.ignored_reason for f in group if f.status == FindingStatus.IGNORED), None)
+
+                oldest.last_detected_at = newest.last_detected_at
+                oldest.last_seen_scan_id = newest.last_seen_scan_id
+                oldest.connection_id = newest.connection_id
+                oldest.aws_account_id = newest.aws_account_id
+                oldest.estimated_monthly_savings = newest.estimated_monthly_savings
+                oldest.description = newest.description
+                oldest.raw_metadata = newest.raw_metadata
+                oldest.status = kept_status
+                oldest.ignored_reason = kept_ignored_reason
+
+                for duplicate in group:
+                    if duplicate.id != oldest.id:
+                        db.delete(duplicate)
+
+        db.commit()
+    finally:
+        db.close()
+
+
+backfill_and_dedupe_findings()
 
 # Validate AWS credentials are available before starting
 validate_aws_credentials()

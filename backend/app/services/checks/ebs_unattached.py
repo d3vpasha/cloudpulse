@@ -7,6 +7,7 @@ from app.services.pricing import ebs_monthly_savings
 @register_check
 class EbsUnattachedVolumeCheck(BaseCheck):
     check_type = "ebs_unattached_volume"
+    finding_code = "EBS01"
     display_name = "Unattached EBS Volume"
     category = CheckCategory.COST
     resource_group = ResourceGroup.STORAGE
@@ -32,6 +33,7 @@ class EbsUnattachedVolumeCheck(BaseCheck):
                 findings.append(
                     CheckFinding(
                         check_type=self.check_type,
+                        finding_code=self.finding_code,
                         resource_id=volume_id,
                         resource_type=self.resource_type,
                         resource_group=self.resource_group,

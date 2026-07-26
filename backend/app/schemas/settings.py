@@ -7,6 +7,7 @@ class SettingsResponse(BaseModel):
     active_regions: list[str]
     scan_frequency: str
     plan_name: str
+    has_active_connection: bool
     next_scheduled_scan_at: datetime | None
     manual_scans_today: int
     manual_scans_limit: int | None

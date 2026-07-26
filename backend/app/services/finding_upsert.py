@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
-from app.models.finding import Finding
+from app.models.finding import Finding, compute_dedup_hash
 from app.models.scan import Scan
 from app.models.connection import Connection
 from app.models.enums import FindingStatus
@@ -22,7 +22,7 @@ def upsert_findings(
     """
     Upsert findings from a scan. Returns count of open findings after processing.
 
-    Dedup key: (connection_id, check_type, resource_id)
+    Dedup key: (workspace_id, dedup_hash)
     - New finding -> insert, status=OPEN
     - Existing OPEN/RESOLVED -> refresh fields, reopen if needed, keep first_detected_at
     - Existing IGNORED -> refresh fields only, keep status=IGNORED
@@ -32,16 +32,20 @@ def upsert_findings(
     for check_findings in findings_by_check.values():
         all_findings.extend(check_findings)
 
-    seen_keys = {(f.check_type, f.resource_id) for f in all_findings}
+    seen_keys = set()
 
     for finding_draft in all_findings:
+        dedup_hash = compute_dedup_hash(1, connection.aws_account_id, finding_draft.finding_code, finding_draft.resource_id)
+        seen_keys.add(dedup_hash)
+
         existing = db.query(Finding).filter(
-            Finding.connection_id == connection.id,
-            Finding.check_type == finding_draft.check_type,
-            Finding.resource_id == finding_draft.resource_id,
+            Finding.workspace_id == 1,
+            Finding.dedup_hash == dedup_hash,
         ).first()
 
         if existing:
+            existing.connection_id = connection.id
+            existing.aws_account_id = connection.aws_account_id
             if existing.status == FindingStatus.IGNORED:
                 existing.last_seen_scan_id = scan.id
                 existing.last_detected_at = datetime.utcnow()
@@ -62,14 +66,17 @@ def upsert_findings(
             new_finding = Finding(
                 id=str(uuid.uuid4()),
                 workspace_id=1,
+                aws_account_id=connection.aws_account_id,
                 connection_id=connection.id,
                 first_seen_scan_id=scan.id,
                 last_seen_scan_id=scan.id,
                 check_type=finding_draft.check_type,
+                finding_code=finding_draft.finding_code,
                 category=finding_draft.category,
                 resource_group=finding_draft.resource_group,
                 resource_type=finding_draft.resource_type,
                 resource_id=finding_draft.resource_id,
+                dedup_hash=dedup_hash,
                 region=finding_draft.region,
                 title=finding_draft.title,
                 description=finding_draft.description,
@@ -86,7 +93,7 @@ def upsert_findings(
     db.commit()
 
     open_findings = db.query(Finding).filter(
-        Finding.connection_id == connection.id,
+        Finding.workspace_id == 1,
         Finding.status.in_([FindingStatus.OPEN, FindingStatus.IGNORED]),
     ).all()
 
@@ -97,7 +104,7 @@ def auto_resolve_findings(
     db: Session,
     connection: Connection,
     scan: Scan,
-    seen_keys: set[tuple[str, str]],
+    seen_keys: set[str],
     regions_covered: list[str],
 ) -> None:
     """
@@ -108,13 +115,14 @@ def auto_resolve_findings(
     checks_by_type = {check.check_type: check for check in get_all_checks()}
 
     stale_findings = db.query(Finding).filter(
-        Finding.connection_id == connection.id,
+        Finding.workspace_id == 1,
+        Finding.aws_account_id == connection.aws_account_id,
         Finding.status.in_([FindingStatus.OPEN, FindingStatus.IGNORED]),
     ).all()
 
     for finding in stale_findings:
         if (
-            (finding.check_type, finding.resource_id) not in seen_keys
+            finding.dedup_hash not in seen_keys
             and finding.region in regions_covered
             and finding.check_type in checks_by_type
         ):

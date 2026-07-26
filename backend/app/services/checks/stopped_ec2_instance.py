@@ -8,6 +8,7 @@ from datetime import datetime
 @register_check
 class StoppedEC2InstanceCheck(BaseCheck):
     check_type = "stopped_ec2_instance"
+    finding_code = "EC201"
     display_name = "Stopped EC2 Instance"
     category = CheckCategory.COST
     resource_group = ResourceGroup.COMPUTE
@@ -55,6 +56,7 @@ class StoppedEC2InstanceCheck(BaseCheck):
                     findings.append(
                         CheckFinding(
                             check_type=self.check_type,
+                            finding_code=self.finding_code,
                             resource_id=instance_id,
                             resource_type=self.resource_type,
                             resource_group=self.resource_group,

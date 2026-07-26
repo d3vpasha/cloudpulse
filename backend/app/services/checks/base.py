@@ -15,6 +15,7 @@ class CheckContext:
 @dataclass
 class CheckFinding:
     check_type: str
+    finding_code: str
     resource_id: str
     resource_type: str
     resource_group: ResourceGroup
@@ -29,6 +30,7 @@ class CheckFinding:
 
 class BaseCheck(ABC):
     check_type: str
+    finding_code: str
     display_name: str
     category: CheckCategory = CheckCategory.COST
     resource_group: ResourceGroup

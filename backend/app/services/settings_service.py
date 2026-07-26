@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.workspace import Workspace
+from app.models.connection import Connection
+from app.models.enums import ConnectionStatus
 from app.schemas.settings import SettingsUpdate
 
 
@@ -10,6 +12,14 @@ def get_settings(db: Session) -> Workspace:
         db.add(workspace)
         db.commit()
     return workspace
+
+
+def has_active_connection(db: Session) -> bool:
+    connection = db.query(Connection).filter(
+        Connection.workspace_id == 1,
+        Connection.status == ConnectionStatus.CONNECTED,
+    ).first()
+    return connection is not None
 
 
 def update_settings(db: Session, settings_update: SettingsUpdate) -> Workspace:

@@ -7,6 +7,7 @@ from app.services.pricing import eip_monthly_savings
 @register_check
 class UnattachedElasticIpCheck(BaseCheck):
     check_type = "eip_unattached"
+    finding_code = "EIP01"
     display_name = "Unattached Elastic IP"
     category = CheckCategory.COST
     resource_group = ResourceGroup.NETWORK
@@ -28,6 +29,7 @@ class UnattachedElasticIpCheck(BaseCheck):
                 findings.append(
                     CheckFinding(
                         check_type=self.check_type,
+                        finding_code=self.finding_code,
                         resource_id=allocation_id,
                         resource_type=self.resource_type,
                         resource_group=self.resource_group,

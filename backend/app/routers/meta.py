@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.services.aws.identity import get_local_identity
+from app.services.plan_service import PLANS
 
 router = APIRouter(prefix="/api/meta", tags=["meta"])
 
@@ -44,6 +45,20 @@ AWS_REGIONS = {
 @router.get("/regions")
 def get_regions():
     return {"regions": AWS_REGIONS}
+
+
+@router.get("/plans")
+def get_plans():
+    plans_list = [
+        {
+            "key": key,
+            "name": details.name,
+            "scan_frequency": details.scan_frequency,
+            "manual_scans_per_day_limit": details.manual_scans_per_day_limit,
+        }
+        for key, details in PLANS.items()
+    ]
+    return {"plans": plans_list}
 
 
 @router.get("/local-identity")

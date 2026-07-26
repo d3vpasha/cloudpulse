@@ -6,6 +6,8 @@ from app.models.enums import CheckCategory, ResourceGroup, RiskLevel, FindingSta
 class FindingResponse(BaseModel):
     id: str
     check_type: str
+    finding_code: str | None
+    aws_account_id: str | None
     category: CheckCategory
     resource_group: ResourceGroup
     resource_type: str
