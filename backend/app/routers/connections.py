@@ -122,6 +122,8 @@ def get_trust_policy(connection_id: str, db: Session = Depends(get_db)):
                     "ec2:DescribeAddresses",
                     "ec2:DescribeInstances",
                     "ec2:DescribeRegions",
+                    "elasticloadbalancing:DescribeTargetGroups",
+                    "elasticloadbalancing:DescribeTargetHealth",
                 ],
                 "Resource": "*",
             }
