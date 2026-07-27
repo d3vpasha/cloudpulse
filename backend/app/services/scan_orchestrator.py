@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
 from app.models.scan import Scan
 from app.models.connection import Connection
+from app.models.workspace import Workspace
 from app.models.enums import ScanStatus
 from app.services.aws.sts import assume_role_session
 from app.services.checks.registry import get_all_checks
-from app.services.checks.base import CheckContext
+from app.services.checks.base import CheckContext, CheckSettings
 from app.services.finding_upsert import upsert_findings
 # Import checks to register them
 import app.services.checks
@@ -44,6 +45,12 @@ def run_scan_task(scan_id: str) -> None:
             return
 
         regions = get_active_regions(db)
+
+        workspace = db.query(Workspace).filter(Workspace.id == 1).first()
+        check_settings = CheckSettings(
+            log_retention_threshold_days=workspace.log_retention_threshold_days if workspace else 365
+        )
+
         findings_by_check = {}
         region_errors = []
 
@@ -51,7 +58,7 @@ def run_scan_task(scan_id: str) -> None:
             for check_cls in get_all_checks():
                 try:
                     ctx = CheckContext(
-                        connection=connection, region=region, boto_session=session
+                        connection=connection, region=region, boto_session=session, settings=check_settings
                     )
                     check_instance = check_cls()
                     results = check_instance.run(ctx)

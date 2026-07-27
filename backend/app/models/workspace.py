@@ -15,5 +15,6 @@ class Workspace(Base):
     next_scheduled_scan_at = Column(DateTime)
     manual_scans_today = Column(Integer, default=0)
     last_manual_scan_date = Column(Date)
+    log_retention_threshold_days = Column(Integer, default=365)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

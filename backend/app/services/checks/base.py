@@ -6,10 +6,16 @@ from app.models.enums import CheckCategory, ResourceGroup, RiskLevel
 
 
 @dataclass
+class CheckSettings:
+    log_retention_threshold_days: int
+
+
+@dataclass
 class CheckContext:
     connection: Connection
     region: str
     boto_session: boto3.Session
+    settings: CheckSettings
 
 
 @dataclass

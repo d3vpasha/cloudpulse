@@ -11,8 +11,10 @@ class SettingsResponse(BaseModel):
     next_scheduled_scan_at: datetime | None
     manual_scans_today: int
     manual_scans_limit: int | None
+    log_retention_threshold_days: int
 
 
 class SettingsUpdate(BaseModel):
     active_providers: list[str] | None = None
     active_regions: list[str] | None = None
+    log_retention_threshold_days: int | None = None

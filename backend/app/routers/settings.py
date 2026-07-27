@@ -21,6 +21,7 @@ def get_workspace_settings(db: Session = Depends(get_db)):
         next_scheduled_scan_at=workspace.next_scheduled_scan_at,
         manual_scans_today=workspace.manual_scans_today,
         manual_scans_limit=plan_details.manual_scans_per_day_limit,
+        log_retention_threshold_days=workspace.log_retention_threshold_days,
     )
 
 
@@ -40,6 +41,7 @@ def update_workspace_settings(
             next_scheduled_scan_at=workspace.next_scheduled_scan_at,
             manual_scans_today=workspace.manual_scans_today,
             manual_scans_limit=plan_details.manual_scans_per_day_limit,
+            log_retention_threshold_days=workspace.log_retention_threshold_days,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

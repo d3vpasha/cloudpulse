@@ -66,6 +66,7 @@ export interface Settings {
   next_scheduled_scan_at: string | null
   manual_scans_today: number
   manual_scans_limit: number | null
+  log_retention_threshold_days: number
 }
 
 export interface PlanDetails {

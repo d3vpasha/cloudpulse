@@ -39,5 +39,10 @@ def update_settings(db: Session, settings_update: SettingsUpdate) -> Workspace:
     if settings_update.active_regions is not None:
         workspace.active_regions = settings_update.active_regions
 
+    if settings_update.log_retention_threshold_days is not None:
+        if not (1 <= settings_update.log_retention_threshold_days <= 3653):
+            raise ValueError("log_retention_threshold_days must be between 1 and 3653")
+        workspace.log_retention_threshold_days = settings_update.log_retention_threshold_days
+
     db.commit()
     return workspace

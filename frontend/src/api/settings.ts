@@ -7,11 +7,12 @@ export const settingsApi = {
     return data
   },
 
-  async update(active_providers?: string[], active_regions?: string[]): Promise<Settings> {
-    const { data } = await apiClient.put('/settings', {
-      active_providers,
-      active_regions,
-    })
+  async update(updates: {
+    active_providers?: string[]
+    active_regions?: string[]
+    log_retention_threshold_days?: number
+  }): Promise<Settings> {
+    const { data } = await apiClient.put('/settings', updates)
     return data
   },
 

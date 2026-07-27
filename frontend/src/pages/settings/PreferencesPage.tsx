@@ -8,6 +8,7 @@ export default function PreferencesPage() {
   const navigate = useNavigate()
   const [providers, setProviders] = useState<string[]>(['aws'])
   const [regions, setRegions] = useState<string[]>(['us-east-1'])
+  const [logRetentionThresholdDays, setLogRetentionThresholdDays] = useState(365)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [expandedProvider, setExpandedProvider] = useState<string>('')
@@ -32,6 +33,7 @@ export default function PreferencesPage() {
     if (settings) {
       setProviders(settings.active_providers)
       setRegions(settings.active_regions)
+      setLogRetentionThresholdDays(settings.log_retention_threshold_days)
     }
   }, [settings])
 
@@ -39,7 +41,11 @@ export default function PreferencesPage() {
     setLoading(true)
     setSaved(false)
     try {
-      await settingsApi.update(providers, regions)
+      await settingsApi.update({
+        active_providers: providers,
+        active_regions: regions,
+        log_retention_threshold_days: logRetentionThresholdDays,
+      })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (error) {
@@ -261,6 +267,29 @@ export default function PreferencesPage() {
           </div>
         </div>
 
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Check Configuration</h2>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="log-retention-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+                Log retention threshold (days)
+              </label>
+              <input
+                id="log-retention-threshold"
+                type="number"
+                min="1"
+                max="3653"
+                value={logRetentionThresholdDays}
+                onChange={(e) => setLogRetentionThresholdDays(Number(e.target.value))}
+                className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-sm text-gray-600 mt-2">
+                CloudWatch log groups with no expiration, or retention longer than this threshold, will be flagged for review.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {saved && (
           <div className="bg-green-50 border border-green-200 rounded p-4 text-green-800 text-sm">
             Settings saved successfully!
@@ -273,7 +302,7 @@ export default function PreferencesPage() {
             disabled={loading}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Saving...' : 'Save provider settings'}
+            {loading ? 'Saving...' : 'Save settings'}
           </button>
         </div>
       </div>
