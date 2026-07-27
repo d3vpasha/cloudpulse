@@ -125,6 +125,8 @@ def get_trust_policy(connection_id: str, db: Session = Depends(get_db)):
                     "elasticloadbalancing:DescribeTargetGroups",
                     "elasticloadbalancing:DescribeTargetHealth",
                     "logs:DescribeLogGroups",
+                    "s3:ListAllMyBuckets",
+                    "s3:GetBucketVersioning",
                 ],
                 "Resource": "*",
             }
