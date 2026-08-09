@@ -22,6 +22,7 @@ export interface Scan {
   regions_scanned: string[]
   resource_count: number
   finding_count: number
+  new_finding_count: number
   error_message: string | null
   created_at: string
 }

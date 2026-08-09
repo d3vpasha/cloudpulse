@@ -1,9 +1,11 @@
 import uuid
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.db.base import get_db
 from app.models.scan import Scan
+from app.models.finding import Finding
 from app.models.connection import Connection
 from app.models.workspace import Workspace
 from app.models.enums import ScanStatus, ConnectionStatus, ScanTrigger
@@ -91,7 +93,20 @@ def list_scans(
         .all()
     )
 
-    return ScanListResponse(scans=scans, total=total, page=page, page_size=page_size)
+    new_counts = dict(
+        db.query(Finding.first_seen_scan_id, func.count(Finding.id))
+        .filter(Finding.first_seen_scan_id.in_([scan.id for scan in scans]))
+        .group_by(Finding.first_seen_scan_id)
+        .all()
+    )
+
+    items = []
+    for scan in scans:
+        item = ScanResponse.model_validate(scan)
+        item.new_finding_count = new_counts.get(scan.id, 0)
+        items.append(item)
+
+    return ScanListResponse(scans=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/scans/{scan_id}", response_model=ScanResponse)

@@ -14,6 +14,7 @@ class ScanResponse(BaseModel):
     regions_scanned: list[str]
     resource_count: int
     finding_count: int
+    new_finding_count: int = 0
     error_message: str | None
     created_at: datetime
 
