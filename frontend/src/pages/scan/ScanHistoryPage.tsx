@@ -100,7 +100,7 @@ export default function ScanHistoryPage() {
                         <StatusBadge status={scan.status} variant={getStatusVariant(scan.status)} />
                       </td>
                       <td className="px-6 py-4 text-xs">{scan.regions_scanned.join(', ')}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-orange-600">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {scan.resource_count}
                         {scan.new_finding_count > 0 && (
                           <span className="ml-2 px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 text-xs font-semibold">
