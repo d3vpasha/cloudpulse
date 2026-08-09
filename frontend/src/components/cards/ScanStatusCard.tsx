@@ -25,7 +25,7 @@ export default function ScanStatusCard({ scan, connectionName, loading = false }
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Scan Status</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Latest scan</h3>
       {loading ? (
         <div className="flex items-center space-x-3">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -33,15 +33,17 @@ export default function ScanStatusCard({ scan, connectionName, loading = false }
         </div>
       ) : scan ? (
         <div className="space-y-3">
-          <div>
-            <span className="text-gray-600 text-sm">Status</span>
-            <div className="mt-1">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 text-sm">Status</span>
               <StatusBadge status={scan.status} variant={getVariant(scan.status)} />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-gray-600 text-sm">Account</span>
+              <span className="font-medium text-gray-900 text-sm truncate">{connectionName || 'Unknown'}</span>
+            </div>
             <div>
-              <span className="text-gray-600 text-sm">Latest scan</span>
+              <span className="text-gray-600 text-sm">Started</span>
               <p className="font-medium text-gray-900 text-sm">{formatDate(scan.started_at)}</p>
             </div>
             <div>
@@ -49,12 +51,6 @@ export default function ScanStatusCard({ scan, connectionName, loading = false }
               <p className="font-medium text-gray-900 text-sm">{formatDate(scan.finished_at)}</p>
             </div>
           </div>
-          {connectionName && (
-            <div>
-              <span className="text-gray-600 text-sm">Account</span>
-              <p className="font-medium text-gray-900 text-sm">{connectionName}</p>
-            </div>
-          )}
           {scan.error_message && (
             <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
               {scan.error_message}
