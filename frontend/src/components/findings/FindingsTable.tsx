@@ -278,7 +278,7 @@ function SortableHeaderCell({
     <th
       ref={setNodeRef}
       style={style}
-      className={`text-left px-6 py-3 font-semibold text-gray-900 ${column.minWidth || ''} ${isDragging ? 'bg-gray-100' : ''}`}
+      className={`text-left px-6 py-3 font-semibold text-gray-900 bg-gray-50 shadow-[inset_0_-1px_0_0_#e5e7eb] ${column.minWidth || ''} ${isDragging ? 'bg-gray-100' : ''}`}
     >
       <div className="flex items-center gap-2">
         {column.sortKey && onSortChange ? (
@@ -376,13 +376,13 @@ export default function FindingsTable({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto">
+      <div className="overflow-auto max-h-[calc(100vh-340px)]">
         <DndContext
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <SortableContext
                   items={columnOrder}
@@ -398,7 +398,7 @@ export default function FindingsTable({
                     />
                   ))}
                 </SortableContext>
-                <th className="text-left px-6 py-3 font-semibold text-gray-900">Actions</th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-900 bg-gray-50 shadow-[inset_0_-1px_0_0_#e5e7eb]">Actions</th>
               </tr>
             </thead>
             <tbody>
