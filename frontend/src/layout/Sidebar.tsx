@@ -27,7 +27,6 @@ export default function Sidebar() {
         {!collapsed && <div className="text-xs font-semibold text-gray-500 uppercase px-4 py-2">Scan</div>}
         <NavItem label="Overview" icon="🏠" href="/overview" collapsed={collapsed} />
         <NavItem label="Scan history" icon="📊" href="/scan-history" collapsed={collapsed} />
-        <NavItem label="Schedules" icon="⏰" href="/schedules" disabled={true} tooltip="Coming soon" collapsed={collapsed} />
 
         {!collapsed && <div className="text-xs font-semibold text-gray-500 uppercase px-4 py-2 mt-4">Findings</div>}
         <NavItem label="All findings" icon="🔍" href="/findings" collapsed={collapsed} />

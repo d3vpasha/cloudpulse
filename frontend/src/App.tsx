@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './layout/AppLayout'
 import OverviewPage from './pages/scan/OverviewPage'
 import ScanHistoryPage from './pages/scan/ScanHistoryPage'
-import SchedulesPage from './pages/scan/SchedulesPage'
 import AllFindingsPage from './pages/findings/AllFindingsPage'
 import ConnectionsListPage from './pages/connections/ConnectionsListPage'
 import NewConnectionPage from './pages/connections/NewConnectionPage'
@@ -28,7 +27,6 @@ function App() {
             <Route index element={<Navigate to="/overview" replace />} />
             <Route path="overview" element={<OverviewPage />} />
             <Route path="scan-history" element={<ScanHistoryPage />} />
-            <Route path="schedules" element={<SchedulesPage />} />
             <Route path="findings" element={<AllFindingsPage />} />
             <Route path="connections" element={<ConnectionsListPage />} />
             <Route path="connections/new" element={<NewConnectionPage />} />
