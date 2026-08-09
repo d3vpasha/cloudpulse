@@ -6,6 +6,8 @@ import { findingsApi } from '../../api/findings'
 import {
   DndContext,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
   closestCenter,
 } from '@dnd-kit/core'
 import {
@@ -14,7 +16,6 @@ import {
   arrayMove,
   useSortable,
 } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 
 function CopyIcon() {
   return (
@@ -262,23 +263,18 @@ function SortableHeaderCell({
   sortOrder?: 'asc' | 'desc'
   onSortChange?: (column: string) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, isDragging, isOver } = useSortable({
     id: column.id,
   })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
 
   const isActive = sortBy === column.id || (column.sortKey && sortBy === column.sortKey)
 
   return (
     <th
       ref={setNodeRef}
-      style={style}
-      className={`text-left px-6 py-3 font-semibold text-gray-900 bg-gray-50 shadow-[inset_0_-1px_0_0_#e5e7eb] ${column.minWidth || ''} ${isDragging ? 'bg-gray-100' : ''}`}
+      className={`text-left px-6 py-3 font-semibold text-gray-900 shadow-[inset_0_-1px_0_0_#e5e7eb] ${column.minWidth || ''} ${
+        isDragging ? 'bg-gray-100 opacity-40' : isOver ? 'bg-blue-50' : 'bg-gray-50'
+      }`}
     >
       <div className="flex items-center gap-2">
         {column.sortKey && onSortChange ? (
@@ -321,6 +317,7 @@ export default function FindingsTable({
 }: FindingsTableProps) {
   const [ignoringId, setIgnoringId] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [activeColumnId, setActiveColumnId] = useState<string | null>(null)
   const defaultColumnIds = DEFAULT_COLUMNS.map(c => c.id)
   const [columnOrder, setColumnOrder] = useColumnOrder(defaultColumnIds)
 
@@ -352,8 +349,13 @@ export default function FindingsTable({
     setIgnoringId(null)
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveColumnId(event.active.id as string)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+    setActiveColumnId(null)
 
     if (over && active.id !== over.id) {
       const oldIndex = columnOrder.indexOf(active.id as string)
@@ -379,6 +381,8 @@ export default function FindingsTable({
       <div className="overflow-auto max-h-[calc(100vh-340px)]">
         <DndContext
           collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragCancel={() => setActiveColumnId(null)}
           onDragEnd={handleDragEnd}
         >
           <table className="w-full text-sm">
@@ -443,6 +447,13 @@ export default function FindingsTable({
               )}
             </tbody>
           </table>
+          <DragOverlay>
+            {activeColumnId && (
+              <div className="px-3 py-2 bg-white border border-gray-300 rounded shadow-lg text-sm font-semibold text-gray-900">
+                {DEFAULT_COLUMNS.find(c => c.id === activeColumnId)?.label}
+              </div>
+            )}
+          </DragOverlay>
         </DndContext>
       </div>
       <div className="mt-4">
