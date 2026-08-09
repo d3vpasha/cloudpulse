@@ -99,6 +99,12 @@ export default function NewConnectionPage() {
 
   return (
     <div className="p-8">
+      <button
+        onClick={() => navigate('/connections')}
+        className="text-sm text-gray-600 hover:text-gray-900 mb-4"
+      >
+        ← Back to connections
+      </button>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Add AWS Connection</h1>
 
       <div className="max-w-2xl">
