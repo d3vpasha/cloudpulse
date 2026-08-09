@@ -8,12 +8,19 @@ import { settingsApi } from '../../api/settings'
 import ConnectionStatusCard from '../../components/cards/ConnectionStatusCard'
 import ScanStatusCard from '../../components/cards/ScanStatusCard'
 import RiskBar from '../../components/findings/RiskBar'
-import FindingsTable from '../../components/findings/FindingsTable'
+
+const riskChipClass = (risk: string) => {
+  switch (risk) {
+    case 'critical': return 'bg-red-100 text-red-800'
+    case 'high': return 'bg-orange-100 text-orange-800'
+    case 'medium': return 'bg-yellow-100 text-yellow-800'
+    default: return 'bg-blue-100 text-blue-800'
+  }
+}
 
 export default function OverviewPage() {
   const navigate = useNavigate()
   const [scanningIds, setScanningIds] = useState<string[]>([])
-  const [scanPage, setScanPage] = useState(1)
   const [scanError, setScanError] = useState<string | null>(null)
   const pollIntervals = useRef<Record<string, ReturnType<typeof setInterval>>>({})
 
@@ -132,15 +139,37 @@ export default function OverviewPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Top prioritized findings</h3>
-        {overview?.top_findings && (
-          <FindingsTable
-            findings={overview.top_findings.slice(0, 5)}
-            total={overview.summary?.total_findings || 0}
-            page={scanPage}
-            pageSize={5}
-            onPageChange={setScanPage}
-          />
+        <div className="flex items-baseline justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Most common issues</h3>
+          <button onClick={() => navigate('/findings')} className="text-sm text-blue-600 hover:underline">
+            View all findings
+          </button>
+        </div>
+        {overview?.common_issues.length ? (
+          <div className="divide-y divide-gray-100">
+            {overview.common_issues.map(issue => (
+              <div key={issue.check_type} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900">{issue.display_name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${riskChipClass(issue.risk_level)}`}>
+                      {issue.risk_level}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                      {issue.category}
+                    </span>
+                    <span className="text-xs text-gray-500">{issue.resource_type}</span>
+                  </div>
+                </div>
+                <span className={`text-sm ${issue.monthly_savings > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                  {issue.monthly_savings > 0 ? `$${issue.monthly_savings.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '-'}
+                </span>
+                <span className="text-base font-bold text-gray-900 w-10 text-right">{issue.count}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600 text-sm">No open findings</p>
         )}
       </div>
     </div>

@@ -77,12 +77,22 @@ export interface PlanDetails {
   manual_scans_per_day_limit: number | null
 }
 
+export interface CommonIssue {
+  check_type: string
+  display_name: string
+  resource_type: string
+  risk_level: 'critical' | 'high' | 'medium' | 'low'
+  category: 'cost' | 'security'
+  count: number
+  monthly_savings: number
+}
+
 export interface DashboardOverview {
   connections: Connection[]
   latest_scan: Scan | null
   summary: FindingSummary
   risk_distribution: Record<string, number>
-  top_findings: Finding[]
+  common_issues: CommonIssue[]
 }
 
 export interface TrustPolicy {

@@ -1,8 +1,19 @@
 from pydantic import BaseModel
 from datetime import datetime
+from app.models.enums import CheckCategory, RiskLevel
 from app.schemas.connection import ConnectionResponse
 from app.schemas.scan import ScanResponse
-from app.schemas.finding import FindingResponse, FindingSummaryResponse
+from app.schemas.finding import FindingSummaryResponse
+
+
+class CommonIssueResponse(BaseModel):
+    check_type: str
+    display_name: str
+    resource_type: str
+    risk_level: RiskLevel
+    category: CheckCategory
+    count: int
+    monthly_savings: float
 
 
 class DashboardOverviewResponse(BaseModel):
@@ -10,4 +21,4 @@ class DashboardOverviewResponse(BaseModel):
     latest_scan: ScanResponse | None
     summary: FindingSummaryResponse
     risk_distribution: dict
-    top_findings: list[FindingResponse]
+    common_issues: list[CommonIssueResponse]
