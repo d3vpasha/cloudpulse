@@ -7,7 +7,6 @@ import { connectionsApi } from '../../api/connections'
 import { settingsApi } from '../../api/settings'
 import ConnectionStatusCard from '../../components/cards/ConnectionStatusCard'
 import ScanStatusCard from '../../components/cards/ScanStatusCard'
-import ScanSummaryCard from '../../components/cards/ScanSummaryCard'
 import RiskBar from '../../components/findings/RiskBar'
 import FindingsTable from '../../components/findings/FindingsTable'
 
@@ -97,7 +96,7 @@ export default function OverviewPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-2 gap-6 mb-8">
         <ConnectionStatusCard
           connections={connections}
           scanningIds={scanningIds}
@@ -105,7 +104,6 @@ export default function OverviewPage() {
           scanBlockedReason={scanBlockedReason}
         />
         <ScanStatusCard scan={overview?.latest_scan || null} connectionName={latestScanAccount} />
-        <ScanSummaryCard summary={overview?.summary || null} />
       </div>
 
       {scanError && (
@@ -115,8 +113,22 @@ export default function OverviewPage() {
       )}
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Findings by risk level</h3>
-        {overview && <RiskBar distribution={overview.risk_distribution} />}
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Findings</h3>
+        {overview && (
+          <>
+            <div className="flex gap-12 mb-6">
+              <div>
+                <span className="text-gray-600 text-sm">Issues to fix</span>
+                <p className="text-3xl font-bold text-gray-900">{overview.summary.total_findings}</p>
+              </div>
+              <div>
+                <span className="text-gray-600 text-sm">Monthly savings potential</span>
+                <p className="text-3xl font-bold text-green-600">${overview.summary.total_monthly_savings.toLocaleString('en-US', { maximumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+            <RiskBar distribution={overview.risk_distribution} />
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">

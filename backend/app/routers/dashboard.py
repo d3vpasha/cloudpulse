@@ -27,7 +27,7 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
 
     findings_query = db.query(Finding).filter(
         Finding.workspace_id == 1,
-        Finding.status.in_([FindingStatus.OPEN, FindingStatus.IGNORED]),
+        Finding.status == FindingStatus.OPEN,
     )
 
     total_findings = findings_query.count()
