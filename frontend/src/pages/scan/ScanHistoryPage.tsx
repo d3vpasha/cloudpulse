@@ -80,14 +80,13 @@ export default function ScanHistoryPage() {
                 <th className="text-left px-6 py-3 font-semibold text-gray-900">Connection</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-900">Status</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-900">Regions</th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-900">Resources</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-900">Findings</th>
               </tr>
             </thead>
             <tbody>
               {!scans || filteredScans.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-600">No scans found</td>
+                  <td colSpan={5} className="text-center py-8 text-gray-600">No scans found</td>
                 </tr>
               ) : (
                 filteredScans.map(scan => {
@@ -101,8 +100,7 @@ export default function ScanHistoryPage() {
                         <StatusBadge status={scan.status} variant={getStatusVariant(scan.status)} />
                       </td>
                       <td className="px-6 py-4 text-xs">{scan.regions_scanned.join(', ')}</td>
-                      <td className="px-6 py-4 text-sm">{scan.resource_count}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-orange-600">{scan.finding_count}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-orange-600">{scan.resource_count}</td>
                     </tr>
                   )
                 })
