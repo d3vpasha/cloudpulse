@@ -14,6 +14,7 @@ export interface Connection {
 export interface Scan {
   id: string
   connection_id: string
+  connection_name: string | null
   status: 'pending' | 'running' | 'succeeded' | 'partial_failure' | 'failed'
   trigger: 'manual' | 'scheduled'
   started_at: string | null

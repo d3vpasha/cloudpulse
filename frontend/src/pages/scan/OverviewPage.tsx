@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '../../api/dashboard'
@@ -13,14 +13,21 @@ import FindingsTable from '../../components/findings/FindingsTable'
 
 export default function OverviewPage() {
   const navigate = useNavigate()
-  const [scanningConnectionId, setScanningConnectionId] = useState<string | null>(null)
+  const [scanningIds, setScanningIds] = useState<string[]>([])
   const [scanPage, setScanPage] = useState(1)
   const [scanError, setScanError] = useState<string | null>(null)
+  const pollIntervals = useRef<Record<string, ReturnType<typeof setInterval>>>({})
+
+  useEffect(() => {
+    return () => {
+      Object.values(pollIntervals.current).forEach(clearInterval)
+    }
+  }, [])
 
   const { data: overview, isLoading, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: () => dashboardApi.getOverview(),
-    refetchInterval: scanningConnectionId ? 2000 : false,
+    refetchInterval: scanningIds.length > 0 ? 2000 : false,
   })
 
   const { data: connections = [] } = useQuery({
@@ -36,30 +43,41 @@ export default function OverviewPage() {
   const connectedConnections = connections.filter(c => c.status === 'connected')
   const hasEnabledProviders = settings?.active_providers && settings.active_providers.length > 0
   const hasSelectedRegions = settings?.active_regions && settings.active_regions.length > 0
-  const canRunScan = connectedConnections.length > 0 && hasEnabledProviders && hasSelectedRegions
   const hasManualScansRemaining = settings && (settings.manual_scans_limit === null || settings.manual_scans_today < settings.manual_scans_limit)
 
-  const handleRunScan = async () => {
-    if (connectedConnections.length === 0) return
-    setScanError(null)
+  const scanBlockedReason =
+    !settings ? 'Loading settings...'
+    : !hasEnabledProviders ? 'Enable at least one provider in Settings'
+    : !hasSelectedRegions ? 'Select at least one region in Settings'
+    : !hasManualScansRemaining ? 'Daily manual scan limit reached'
+    : null
 
-    const connectionId = connectedConnections[0].id
-    setScanningConnectionId(connectionId)
+  const latestScanConnection = connections.find(c => c.id === overview?.latest_scan?.connection_id)
+  const latestScanAccount = latestScanConnection?.name
+    || (overview?.latest_scan?.connection_name ? `${overview.latest_scan.connection_name} (deleted)` : null)
+
+  const handleRunScan = async (connectionId: string) => {
+    setScanError(null)
+    setScanningIds(prev => [...prev, connectionId])
+
+    const stopScanning = () => setScanningIds(prev => prev.filter(id => id !== connectionId))
 
     try {
       const scan = await scansApi.trigger(connectionId)
-      const pollScan = setInterval(async () => {
+      pollIntervals.current[connectionId] = setInterval(async () => {
         const updated = await scansApi.get(scan.id)
         if (updated.status !== 'pending' && updated.status !== 'running') {
-          clearInterval(pollScan)
-          setScanningConnectionId(null)
+          clearInterval(pollIntervals.current[connectionId])
+          delete pollIntervals.current[connectionId]
+          stopScanning()
           refetch()
         }
       }, 2000)
     } catch (error: any) {
       console.error('Failed to trigger scan', error)
-      setScanError(error.response?.data?.detail || 'Failed to trigger scan')
-      setScanningConnectionId(null)
+      const name = connections.find(c => c.id === connectionId)?.name || connectionId
+      setScanError(`${name}: ${error.response?.data?.detail || 'Failed to trigger scan'}`)
+      stopScanning()
     }
   }
 
@@ -80,8 +98,13 @@ export default function OverviewPage() {
       )}
 
       <div className="grid grid-cols-3 gap-6 mb-8">
-        <ConnectionStatusCard connection={connectedConnections[0] || null} />
-        <ScanStatusCard scan={overview?.latest_scan || null} loading={scanningConnectionId !== null} />
+        <ConnectionStatusCard
+          connections={connections}
+          scanningIds={scanningIds}
+          onScan={handleRunScan}
+          scanBlockedReason={scanBlockedReason}
+        />
+        <ScanStatusCard scan={overview?.latest_scan || null} connectionName={latestScanAccount} />
         <ScanSummaryCard summary={overview?.summary || null} />
       </div>
 
@@ -92,56 +115,8 @@ export default function OverviewPage() {
       )}
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Findings by risk level</h3>
-            {overview && <RiskBar distribution={overview.risk_distribution} />}
-          </div>
-          <div className="relative group">
-            <button
-              onClick={handleRunScan}
-              disabled={!canRunScan || scanningConnectionId !== null || !hasManualScansRemaining}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {scanningConnectionId ? 'Scanning...' : 'Run new scan'}
-            </button>
-            {connectedConnections.length === 0 && (
-              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-sm rounded px-3 py-2 whitespace-nowrap z-10">
-                <p className="font-semibold mb-1">No connected accounts</p>
-                <p className="text-gray-300">Go to Connections menu and add a new connection</p>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-              </div>
-            )}
-            {!hasEnabledProviders && connectedConnections.length > 0 && (
-              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-sm rounded px-3 py-2 whitespace-nowrap z-10">
-                <p className="font-semibold mb-1">No providers enabled</p>
-                <p className="text-gray-300">Go to Settings and enable at least one provider</p>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-              </div>
-            )}
-            {!hasSelectedRegions && hasEnabledProviders && connectedConnections.length > 0 && (
-              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-sm rounded px-3 py-2 whitespace-nowrap z-10">
-                <p className="font-semibold mb-1">No regions selected</p>
-                <p className="text-gray-300">Go to Settings and select at least one region</p>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-              </div>
-            )}
-            {!hasManualScansRemaining && (
-              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-sm rounded px-3 py-2 z-10">
-                <p className="font-semibold mb-1">Daily manual scan limit reached</p>
-                <p className="text-gray-300">You have used all your manual scans for today</p>
-                <p className="text-gray-300 text-xs mt-2">Upgrade your plan for more scans or wait until tomorrow</p>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-              </div>
-            )}
-            {scanningConnectionId && (
-              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-sm rounded px-3 py-2 whitespace-nowrap z-10">
-                <p>Scan in progress...</p>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-              </div>
-            )}
-          </div>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Findings by risk level</h3>
+        {overview && <RiskBar distribution={overview.risk_distribution} />}
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">

@@ -3,10 +3,11 @@ import StatusBadge from '../common/StatusBadge'
 
 interface ScanStatusCardProps {
   scan: Scan | null
+  connectionName?: string | null
   loading?: boolean
 }
 
-export default function ScanStatusCard({ scan, loading = false }: ScanStatusCardProps) {
+export default function ScanStatusCard({ scan, connectionName, loading = false }: ScanStatusCardProps) {
   const getVariant = (status?: string) => {
     switch (status) {
       case 'succeeded': return 'success'
@@ -48,6 +49,12 @@ export default function ScanStatusCard({ scan, loading = false }: ScanStatusCard
               <p className="font-medium text-gray-900 text-sm">{formatDate(scan.finished_at)}</p>
             </div>
           </div>
+          {connectionName && (
+            <div>
+              <span className="text-gray-600 text-sm">Account</span>
+              <p className="font-medium text-gray-900 text-sm">{connectionName}</p>
+            </div>
+          )}
           {scan.error_message && (
             <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
               {scan.error_message}
