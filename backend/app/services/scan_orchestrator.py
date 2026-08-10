@@ -48,7 +48,8 @@ def run_scan_task(scan_id: str) -> None:
 
         workspace = db.query(Workspace).filter(Workspace.id == 1).first()
         check_settings = CheckSettings(
-            log_retention_threshold_days=workspace.log_retention_threshold_days if workspace else 365
+            log_retention_threshold_days=workspace.log_retention_threshold_days if workspace else 365,
+            access_key_unused_threshold_days=workspace.access_key_unused_threshold_days if workspace else 90,
         )
 
         findings_by_check = {}
@@ -56,6 +57,9 @@ def run_scan_task(scan_id: str) -> None:
 
         for region in regions:
             for check_cls in get_all_checks():
+                # global checks return identical results in every region, run them once
+                if check_cls.global_check and region != regions[0]:
+                    continue
                 try:
                     ctx = CheckContext(
                         connection=connection, region=region, boto_session=session, settings=check_settings

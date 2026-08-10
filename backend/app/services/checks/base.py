@@ -8,6 +8,7 @@ from app.models.enums import CheckCategory, ResourceGroup, RiskLevel
 @dataclass
 class CheckSettings:
     log_retention_threshold_days: int
+    access_key_unused_threshold_days: int
 
 
 @dataclass
@@ -42,6 +43,9 @@ class BaseCheck(ABC):
     resource_group: ResourceGroup
     resource_type: str
     default_risk_level: RiskLevel
+    # Global services (IAM, S3) return the same resources from every region,
+    # so these checks run once per scan instead of once per active region.
+    global_check: bool = False
 
     @abstractmethod
     def run(self, ctx: CheckContext) -> list[CheckFinding]:

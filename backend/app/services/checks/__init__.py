@@ -5,6 +5,7 @@ from app.services.checks.stopped_ec2_instance import StoppedEC2InstanceCheck
 from app.services.checks.target_group_no_targets import TargetGroupNoTargetsCheck
 from app.services.checks.log_group_retention import LogGroupRetentionCheck
 from app.services.checks.s3_versioning import S3VersioningCheck
+from app.services.checks.iam_access_key_unused import IamAccessKeyUnusedCheck
 
 __all__ = [
     "EbsUnattachedVolumeCheck",
@@ -13,4 +14,5 @@ __all__ = [
     "TargetGroupNoTargetsCheck",
     "LogGroupRetentionCheck",
     "S3VersioningCheck",
+    "IamAccessKeyUnusedCheck",
 ]

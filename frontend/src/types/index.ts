@@ -33,7 +33,7 @@ export interface Finding {
   finding_code: string | null
   aws_account_id: string | null
   category: 'cost' | 'security'
-  resource_group: 'storage' | 'network' | 'compute'
+  resource_group: 'storage' | 'network' | 'compute' | 'identity'
   resource_type: string
   resource_id: string
   region: string
@@ -69,6 +69,7 @@ export interface Settings {
   manual_scans_today: number
   manual_scans_limit: number | null
   log_retention_threshold_days: number
+  access_key_unused_threshold_days: number
 }
 
 export interface PlanDetails {

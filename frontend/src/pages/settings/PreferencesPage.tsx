@@ -9,6 +9,7 @@ export default function PreferencesPage() {
   const [providers, setProviders] = useState<string[]>(['aws'])
   const [regions, setRegions] = useState<string[]>(['us-east-1'])
   const [logRetentionThresholdDays, setLogRetentionThresholdDays] = useState(365)
+  const [accessKeyUnusedThresholdDays, setAccessKeyUnusedThresholdDays] = useState(90)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [expandedProvider, setExpandedProvider] = useState<string>('')
@@ -34,6 +35,7 @@ export default function PreferencesPage() {
       setProviders(settings.active_providers)
       setRegions(settings.active_regions)
       setLogRetentionThresholdDays(settings.log_retention_threshold_days)
+      setAccessKeyUnusedThresholdDays(settings.access_key_unused_threshold_days)
     }
   }, [settings])
 
@@ -45,6 +47,7 @@ export default function PreferencesPage() {
         active_providers: providers,
         active_regions: regions,
         log_retention_threshold_days: logRetentionThresholdDays,
+        access_key_unused_threshold_days: accessKeyUnusedThresholdDays,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -285,6 +288,24 @@ export default function PreferencesPage() {
               />
               <p className="text-sm text-gray-600 mt-2">
                 CloudWatch log groups with no expiration, or retention longer than this threshold, will be flagged for review.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="access-key-unused-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+                Unused access key threshold (days)
+              </label>
+              <input
+                id="access-key-unused-threshold"
+                type="number"
+                min="1"
+                max="365"
+                value={accessKeyUnusedThresholdDays}
+                onChange={(e) => setAccessKeyUnusedThresholdDays(Number(e.target.value))}
+                className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-sm text-gray-600 mt-2">
+                Active IAM access keys that have not been used within this many days, or that were never used since creation, will be flagged for review. 90 days matches the CIS AWS Foundations Benchmark.
               </p>
             </div>
           </div>

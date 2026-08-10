@@ -55,7 +55,7 @@ export default function AllFindingsPage() {
     { key: 'status', label: 'Status', values: { open: 'Open', ignored: 'Ignored', resolved: 'Resolved' } },
     { key: 'risk_level', label: 'Risk Level', values: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' } },
     { key: 'category', label: 'Category', values: { cost: 'Cost', security: 'Security' } },
-    { key: 'resource_group', label: 'Resource Group', values: { storage: 'Storage', network: 'Network', compute: 'Compute' } },
+    { key: 'resource_group', label: 'Resource Group', values: { storage: 'Storage', network: 'Network', compute: 'Compute', identity: 'Identity' } },
     { key: 'search', label: 'Search', isText: true },
   ]
 

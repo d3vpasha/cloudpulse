@@ -55,6 +55,8 @@ def run_migrations():
             conn.execute(text('ALTER TABLE workspaces ADD COLUMN last_manual_scan_date DATE'))
         if 'log_retention_threshold_days' not in workspaces_columns:
             conn.execute(text('ALTER TABLE workspaces ADD COLUMN log_retention_threshold_days INTEGER DEFAULT 365'))
+        if 'access_key_unused_threshold_days' not in workspaces_columns:
+            conn.execute(text('ALTER TABLE workspaces ADD COLUMN access_key_unused_threshold_days INTEGER DEFAULT 90'))
         conn.commit()
 
     findings_columns = [col['name'] for col in inspector.get_columns('findings')]

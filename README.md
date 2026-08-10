@@ -128,9 +128,17 @@ When you add a connection, CloudPulse shows a guided wizard:
 
 | Check | Category | Risk | Description |
 |-------|----------|------|-------------|
-| Unattached EBS volumes | Cost | High | EBS volumes not attached to any instance |
-| Unattached Elastic IPs | Cost | Low | Elastic IPs not associated with any instance |
-| Stopped EC2 instances | Cost | Medium | EC2 instances in stopped state (still incur storage costs) |
+| Code | Check | Category | Risk | Description |
+|------|-------|----------|------|-------------|
+| EBS01 | Unattached EBS volumes | Cost | High | EBS volumes not attached to any instance |
+| EIP01 | Unattached Elastic IPs | Cost | Low | Elastic IPs not associated with any instance |
+| EC201 | Stopped EC2 instances | Cost | Medium | EC2 instances in stopped state (still incur storage costs) |
+| CW01 | CloudWatch log group retention | Security | Medium | Log groups with no expiration, or retention above the configured threshold |
+| S3V01 | S3 bucket versioning disabled | Security | Low | Buckets without versioning enabled |
+| ELB01 | Target group with no targets | Security | Medium | Load balancer target groups with no registered targets |
+| IAM01 | IAM access key unused | Security | High | Active access keys unused (or never used) for longer than the configured threshold |
+
+Thresholds for CW01 and IAM01 are configurable under Settings > Preferences > Check Configuration.
 
 **Required IAM Permissions:**
 ```json
@@ -140,7 +148,15 @@ When you add a connection, CloudPulse shows a guided wizard:
     "ec2:DescribeVolumes",
     "ec2:DescribeAddresses",
     "ec2:DescribeInstances",
-    "ec2:DescribeRegions"
+    "ec2:DescribeRegions",
+    "elasticloadbalancing:DescribeTargetGroups",
+    "elasticloadbalancing:DescribeTargetHealth",
+    "logs:DescribeLogGroups",
+    "s3:ListAllMyBuckets",
+    "s3:GetBucketVersioning",
+    "iam:ListUsers",
+    "iam:ListAccessKeys",
+    "iam:GetAccessKeyLastUsed"
   ],
   "Resource": "*"
 }

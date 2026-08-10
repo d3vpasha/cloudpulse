@@ -44,5 +44,10 @@ def update_settings(db: Session, settings_update: SettingsUpdate) -> Workspace:
             raise ValueError("log_retention_threshold_days must be between 1 and 3653")
         workspace.log_retention_threshold_days = settings_update.log_retention_threshold_days
 
+    if settings_update.access_key_unused_threshold_days is not None:
+        if not (1 <= settings_update.access_key_unused_threshold_days <= 365):
+            raise ValueError("access_key_unused_threshold_days must be between 1 and 365")
+        workspace.access_key_unused_threshold_days = settings_update.access_key_unused_threshold_days
+
     db.commit()
     return workspace

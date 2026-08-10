@@ -11,6 +11,7 @@ export const settingsApi = {
     active_providers?: string[]
     active_regions?: string[]
     log_retention_threshold_days?: number
+    access_key_unused_threshold_days?: number
   }): Promise<Settings> {
     const { data } = await apiClient.put('/settings', updates)
     return data

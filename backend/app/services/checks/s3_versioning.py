@@ -12,6 +12,7 @@ class S3VersioningCheck(BaseCheck):
     resource_group = ResourceGroup.STORAGE
     resource_type = "S3 Bucket"
     default_risk_level = RiskLevel.LOW
+    global_check = True
 
     def run(self, ctx: CheckContext) -> list[CheckFinding]:
         findings = []

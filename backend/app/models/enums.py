@@ -16,6 +16,7 @@ class ResourceGroup(str, Enum):
     STORAGE = "storage"
     NETWORK = "network"
     COMPUTE = "compute"
+    IDENTITY = "identity"
 
 
 class RiskLevel(str, Enum):

@@ -127,6 +127,9 @@ def get_trust_policy(connection_id: str, db: Session = Depends(get_db)):
                     "logs:DescribeLogGroups",
                     "s3:ListAllMyBuckets",
                     "s3:GetBucketVersioning",
+                    "iam:ListUsers",
+                    "iam:ListAccessKeys",
+                    "iam:GetAccessKeyLastUsed",
                 ],
                 "Resource": "*",
             }
