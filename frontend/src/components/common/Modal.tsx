@@ -3,10 +3,16 @@ import React from 'react'
 interface ModalProps {
   open: boolean
   onClose: () => void
+  size?: 'sm' | 'full'
   children: React.ReactNode
 }
 
-export default function Modal({ open, onClose, children }: ModalProps) {
+const SIZE_CLASSES = {
+  sm: 'w-full max-w-md',
+  full: 'w-full max-w-[90vw] min-w-[50vw] min-h-[50vh]',
+}
+
+export default function Modal({ open, onClose, size = 'full', children }: ModalProps) {
   if (!open) return null
 
   return (
@@ -15,7 +21,7 @@ export default function Modal({ open, onClose, children }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-[90vw] min-w-[50vw] min-h-[50vh] max-h-[90vh] mx-4 overflow-y-auto"
+        className={`relative bg-white rounded-lg shadow-lg p-6 max-h-[90vh] mx-4 overflow-y-auto ${SIZE_CLASSES[size]}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button

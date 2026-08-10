@@ -1,6 +1,7 @@
 import { Finding } from '../../types'
 import StatusBadge from '../common/StatusBadge'
 import Pagination from '../common/Pagination'
+import Modal from '../common/Modal'
 import { useState, useEffect, useLayoutEffect, useRef, ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { findingsApi } from '../../api/findings'
 import {
@@ -31,6 +32,24 @@ function CopyIcon() {
     >
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
+
+function SettingsIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   )
 }
@@ -225,6 +244,7 @@ const MAX_COLUMN_WIDTH = 720
 
 const STORAGE_KEY = 'findings_column_order'
 const WIDTHS_STORAGE_KEY = 'findings_column_widths'
+const HIDDEN_STORAGE_KEY = 'findings_hidden_columns'
 
 function useColumnOrder(defaultOrder: string[]) {
   const [order, setOrder] = useState<string[]>(() => {
@@ -245,6 +265,123 @@ function useColumnOrder(defaultOrder: string[]) {
   }, [order])
 
   return [order, setOrder] as const
+}
+
+function useHiddenColumns(knownIds: string[]) {
+  const [hidden, setHidden] = useState<string[]>(() => {
+    const saved = localStorage.getItem(HIDDEN_STORAGE_KEY)
+    if (!saved) return []
+    try {
+      const parsed: string[] = JSON.parse(saved)
+      return parsed.filter(id => knownIds.includes(id))
+    } catch {
+      return []
+    }
+  })
+
+  useEffect(() => {
+    localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(hidden))
+  }, [hidden])
+
+  return [hidden, setHidden] as const
+}
+
+function ColumnToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between gap-4 px-2 py-2 rounded hover:bg-gray-50 text-left"
+    >
+      <span className="text-sm text-gray-900">{label}</span>
+      <span
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+          checked ? 'bg-blue-600' : 'bg-gray-300'
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-[18px]' : 'translate-x-0.5'
+          }`}
+        />
+      </span>
+    </button>
+  )
+}
+
+function ColumnPreferences({
+  open,
+  columns,
+  hiddenColumns,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean
+  columns: ColumnDef[]
+  hiddenColumns: string[]
+  onClose: () => void
+  onConfirm: (hidden: string[]) => void
+}) {
+  const [draft, setDraft] = useState(hiddenColumns)
+
+  // reset the draft each time the modal opens so Cancel really discards
+  useEffect(() => {
+    if (open) setDraft(hiddenColumns)
+  }, [open])
+
+  const visibleCount = columns.length - draft.length
+
+  return (
+    <Modal open={open} onClose={onClose} size="sm">
+      <h2 className="text-lg font-semibold text-gray-900">Preferences</h2>
+      <p className="text-sm font-medium text-gray-900 mt-6">Columns</p>
+      <p className="text-sm text-gray-600">Select the columns to show in the table</p>
+      <div className="mt-3 divide-y divide-gray-100">
+        {columns.map(column => (
+          <ColumnToggle
+            key={column.id}
+            label={column.label}
+            checked={!draft.includes(column.id)}
+            onChange={checked =>
+              setDraft(previous =>
+                checked ? previous.filter(id => id !== column.id) : [...previous, column.id]
+              )
+            }
+          />
+        ))}
+      </div>
+      {visibleCount === 0 && (
+        <p className="text-sm text-gray-600 mt-4">Keep at least one column visible</p>
+      )}
+      <div className="flex items-center justify-end gap-3 mt-6">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => onConfirm(draft)}
+          disabled={visibleCount === 0}
+          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Confirm
+        </button>
+      </div>
+    </Modal>
+  )
 }
 
 function clampWidth(width: number, minWidth = MIN_COLUMN_WIDTH) {
@@ -408,6 +545,8 @@ export default function FindingsTable({
     Object.fromEntries(DEFAULT_COLUMNS.map(c => [c.id, c.defaultWidth]))
   )
   const [minWidths, setMinWidths] = useState<Record<string, number>>({})
+  const [hiddenColumns, setHiddenColumns] = useHiddenColumns(defaultColumnIds)
+  const [preferencesOpen, setPreferencesOpen] = useState(false)
 
   const handleCopy = async (fieldId: string, value: string) => {
     await navigator.clipboard.writeText(value)
@@ -472,13 +611,36 @@ export default function FindingsTable({
     .map(id => DEFAULT_COLUMNS.find(c => c.id === id))
     .filter((c): c is ColumnDef => c !== undefined)
 
+  const visibleColumns = orderedColumns.filter(column => !hiddenColumns.includes(column.id))
+
   const widthOf = (column: ColumnDef) =>
     Math.max(columnWidths[column.id] ?? column.defaultWidth, minWidths[column.id] ?? 0)
 
-  const tableWidth = orderedColumns.reduce((sum, column) => sum + widthOf(column), 0) + ACTIONS_COLUMN_WIDTH
+  const tableWidth = visibleColumns.reduce((sum, column) => sum + widthOf(column), 0) + ACTIONS_COLUMN_WIDTH
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setPreferencesOpen(true)}
+          className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          title="Preferences"
+          aria-label="Preferences"
+        >
+          <SettingsIcon />
+        </button>
+      </div>
+      <ColumnPreferences
+        open={preferencesOpen}
+        columns={orderedColumns}
+        hiddenColumns={hiddenColumns}
+        onClose={() => setPreferencesOpen(false)}
+        onConfirm={hidden => {
+          setHiddenColumns(hidden)
+          setPreferencesOpen(false)
+        }}
+      />
       <div className="overflow-auto max-h-[calc(100vh-340px)]">
         <DndContext
           collisionDetection={closestCenter}
@@ -488,7 +650,7 @@ export default function FindingsTable({
         >
           <table className="min-w-full table-fixed text-sm" style={{ width: tableWidth }}>
             <colgroup>
-              {orderedColumns.map(column => (
+              {visibleColumns.map(column => (
                 <col key={column.id} style={{ width: widthOf(column) }} />
               ))}
               <col style={{ width: ACTIONS_COLUMN_WIDTH }} />
@@ -496,10 +658,10 @@ export default function FindingsTable({
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <SortableContext
-                  items={columnOrder}
+                  items={visibleColumns.map(column => column.id)}
                   strategy={horizontalListSortingStrategy}
                 >
-                  {orderedColumns.map(column => (
+                  {visibleColumns.map(column => (
                     <SortableHeaderCell
                       key={column.id}
                       column={column}
@@ -517,14 +679,14 @@ export default function FindingsTable({
             <tbody>
               {findings.length === 0 ? (
                 <tr>
-                  <td colSpan={orderedColumns.length + 1} className="text-center py-8 text-gray-600">
+                  <td colSpan={visibleColumns.length + 1} className="text-center py-8 text-gray-600">
                     No findings found
                   </td>
                 </tr>
               ) : (
                 findings.map((finding) => (
                   <tr key={finding.id} className="border-b hover:bg-gray-50">
-                    {orderedColumns.map(column => (
+                    {visibleColumns.map(column => (
                       <td
                         key={`${finding.id}-${column.id}`}
                         className="px-6 py-4 overflow-hidden"
