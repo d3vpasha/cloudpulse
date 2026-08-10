@@ -1,7 +1,7 @@
 import { Finding } from '../../types'
 import StatusBadge from '../common/StatusBadge'
 import Pagination from '../common/Pagination'
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect, ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { findingsApi } from '../../api/findings'
 import {
   DndContext,
@@ -70,7 +70,7 @@ interface ColumnDef {
   id: string
   label: string
   sortKey?: string
-  minWidth?: string
+  defaultWidth: number
   render: (finding: Finding, ctx: RenderContext) => ReactNode
 }
 
@@ -79,21 +79,55 @@ interface RenderContext {
   onCopy: (fieldId: string, value: string) => void
 }
 
+function CopyableCell({
+  value,
+  fieldId,
+  copiedField,
+  onCopy,
+}: {
+  value: string
+  fieldId: string
+} & RenderContext) {
+  return (
+    <div className="flex items-center gap-1.5 min-w-0 text-sm text-gray-900">
+      <button
+        type="button"
+        onClick={() => onCopy(fieldId, value)}
+        className="bg-transparent border-0 p-0 cursor-pointer hover:underline truncate min-w-0"
+        title={value}
+      >
+        {value}
+      </button>
+      <button
+        type="button"
+        onClick={() => onCopy(fieldId, value)}
+        className="inline-flex items-center justify-center shrink-0 text-gray-400 hover:text-blue-600 bg-transparent border-0 p-0 cursor-pointer"
+        title="Copy to clipboard"
+        aria-label="Copy"
+      >
+        <CopyIcon />
+      </button>
+      {copiedField === fieldId && <span className="text-xs text-gray-500 shrink-0">Copied</span>}
+    </div>
+  )
+}
+
 const DEFAULT_COLUMNS: ColumnDef[] = [
   {
     id: 'priority_rank',
     label: 'Priority',
     sortKey: 'priority_rank',
-    render: (finding) => <div className="text-sm text-gray-900">{finding.priority_rank}</div>,
+    defaultWidth: 90,
+    render: (finding) => <div className="text-sm text-gray-900 truncate">{finding.priority_rank}</div>,
   },
   {
     id: 'finding',
     label: 'Finding',
-    minWidth: 'min-w-[320px]',
+    defaultWidth: 340,
     render: (finding) => (
-      <div>
-        <div className="font-medium text-gray-900">{finding.title}</div>
-        <div className="text-xs text-gray-600 mt-1">{finding.description}</div>
+      <div className="min-w-0">
+        <div className="font-medium text-gray-900 truncate" title={finding.title}>{finding.title}</div>
+        <div className="text-xs text-gray-600 mt-1 truncate" title={finding.description}>{finding.description}</div>
       </div>
     ),
   },
@@ -101,109 +135,64 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     id: 'category',
     label: 'Category',
     sortKey: 'category',
-    render: (finding) => <div className="text-sm text-gray-900 capitalize">{finding.category}</div>,
+    defaultWidth: 130,
+    render: (finding) => <div className="text-sm text-gray-900 capitalize truncate">{finding.category}</div>,
   },
   {
     id: 'resource',
     label: 'Resource',
+    defaultWidth: 230,
     render: (finding, { copiedField, onCopy }) => (
-      <div className="text-sm text-gray-900 whitespace-nowrap">
-        <button
-          type="button"
-          onClick={() => onCopy(`resource-${finding.id}`, finding.resource_id)}
-          className="bg-transparent border-0 p-0 cursor-pointer hover:underline"
-          title="Click to copy"
-        >
-          {finding.resource_id}
-        </button>
-        <button
-          type="button"
-          onClick={() => onCopy(`resource-${finding.id}`, finding.resource_id)}
-          className="inline-flex items-center justify-center text-gray-400 hover:text-blue-600 ml-1.5 bg-transparent border-0 p-0 cursor-pointer align-middle"
-          title="Copy to clipboard"
-          aria-label="Copy"
-        >
-          <CopyIcon />
-        </button>
-        {copiedField === `resource-${finding.id}` && (
-          <span className="text-xs text-gray-500 ml-2">Copied</span>
-        )}
-      </div>
+      <CopyableCell
+        value={finding.resource_id}
+        fieldId={`resource-${finding.id}`}
+        copiedField={copiedField}
+        onCopy={onCopy}
+      />
     ),
   },
   {
     id: 'aws_account',
     label: 'AWS Account',
-    render: (finding, { copiedField, onCopy }) => (
-      <div className="text-sm text-gray-900 whitespace-nowrap">
-        {finding.aws_account_id ? (
-          <>
-            <button
-              type="button"
-              onClick={() => onCopy(`account-${finding.id}`, finding.aws_account_id)}
-              className="bg-transparent border-0 p-0 cursor-pointer hover:underline"
-              title="Click to copy"
-            >
-              {finding.aws_account_id}
-            </button>
-            <button
-              type="button"
-              onClick={() => onCopy(`account-${finding.id}`, finding.aws_account_id)}
-              className="inline-flex items-center justify-center text-gray-400 hover:text-blue-600 ml-1.5 bg-transparent border-0 p-0 cursor-pointer align-middle"
-              title="Copy to clipboard"
-              aria-label="Copy"
-            >
-              <CopyIcon />
-            </button>
-            {copiedField === `account-${finding.id}` && (
-              <span className="text-xs text-gray-500 ml-2">Copied</span>
-            )}
-          </>
-        ) : (
-          '-'
-        )}
-      </div>
-    ),
+    defaultWidth: 150,
+    render: (finding, { copiedField, onCopy }) =>
+      finding.aws_account_id ? (
+        <CopyableCell
+          value={finding.aws_account_id}
+          fieldId={`account-${finding.id}`}
+          copiedField={copiedField}
+          onCopy={onCopy}
+        />
+      ) : (
+        <div className="text-sm text-gray-900">-</div>
+      ),
   },
   {
     id: 'region',
     label: 'Region',
     sortKey: 'region',
+    defaultWidth: 130,
     render: (finding, { copiedField, onCopy }) => (
-      <div className="text-sm text-gray-900 whitespace-nowrap">
-        <button
-          type="button"
-          onClick={() => onCopy(`region-${finding.id}`, finding.region)}
-          className="bg-transparent border-0 p-0 cursor-pointer hover:underline"
-          title="Click to copy"
-        >
-          {finding.region}
-        </button>
-        <button
-          type="button"
-          onClick={() => onCopy(`region-${finding.id}`, finding.region)}
-          className="inline-flex items-center justify-center text-gray-400 hover:text-blue-600 ml-1.5 bg-transparent border-0 p-0 cursor-pointer align-middle"
-          title="Copy to clipboard"
-          aria-label="Copy"
-        >
-          <CopyIcon />
-        </button>
-        {copiedField === `region-${finding.id}` && (
-          <span className="text-xs text-gray-500 ml-2">Copied</span>
-        )}
-      </div>
+      <CopyableCell
+        value={finding.region}
+        fieldId={`region-${finding.id}`}
+        copiedField={copiedField}
+        onCopy={onCopy}
+      />
     ),
   },
   {
     id: 'savings',
     label: 'Savings/month',
     sortKey: 'savings',
-    render: (finding) => <div className="font-medium text-green-600">${finding.estimated_monthly_savings.toFixed(2)}</div>,
+    defaultWidth: 140,
+    render: (finding) => <div className="font-medium text-green-600 truncate">${finding.estimated_monthly_savings.toFixed(2)}</div>,
   },
   {
     id: 'risk_level',
     label: 'Risk',
     sortKey: 'risk_level',
+    defaultWidth: 100,
     render: (finding) => {
       const getRiskColor = (risk: string) => {
         switch (risk) {
@@ -225,11 +214,17 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     id: 'first_detected_at',
     label: 'First detected',
     sortKey: 'first_detected_at',
-    render: (finding) => <div className="text-sm text-gray-900">{new Date(finding.first_detected_at).toLocaleDateString()}</div>,
+    defaultWidth: 140,
+    render: (finding) => <div className="text-sm text-gray-900 truncate">{new Date(finding.first_detected_at).toLocaleDateString()}</div>,
   },
 ]
 
+const ACTIONS_COLUMN_WIDTH = 110
+const MIN_COLUMN_WIDTH = 80
+const MAX_COLUMN_WIDTH = 720
+
 const STORAGE_KEY = 'findings_column_order'
+const WIDTHS_STORAGE_KEY = 'findings_column_widths'
 
 function useColumnOrder(defaultOrder: string[]) {
   const [order, setOrder] = useState<string[]>(() => {
@@ -252,13 +247,44 @@ function useColumnOrder(defaultOrder: string[]) {
   return [order, setOrder] as const
 }
 
+function clampWidth(width: number) {
+  return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(width)))
+}
+
+function useColumnWidths(defaultWidths: Record<string, number>) {
+  const [widths, setWidths] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem(WIDTHS_STORAGE_KEY)
+    if (!saved) return defaultWidths
+    try {
+      const parsed: Record<string, number> = JSON.parse(saved)
+      const merged = { ...defaultWidths }
+      Object.entries(parsed).forEach(([id, width]) => {
+        if (id in merged && typeof width === 'number') {
+          merged[id] = clampWidth(width)
+        }
+      })
+      return merged
+    } catch {
+      return defaultWidths
+    }
+  })
+
+  useEffect(() => {
+    localStorage.setItem(WIDTHS_STORAGE_KEY, JSON.stringify(widths))
+  }, [widths])
+
+  return [widths, setWidths] as const
+}
+
 function SortableHeaderCell({
   column,
+  onResize,
   sortBy,
   sortOrder,
   onSortChange,
 }: {
   column: ColumnDef
+  onResize: (columnId: string, width: number) => void
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   onSortChange?: (column: string) => void
@@ -266,38 +292,78 @@ function SortableHeaderCell({
   const { attributes, listeners, setNodeRef, isDragging, isOver } = useSortable({
     id: column.id,
   })
+  const [isResizing, setIsResizing] = useState(false)
 
   const isActive = sortBy === column.id || (column.sortKey && sortBy === column.sortKey)
+
+  const handleResizeStart = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const handle = event.currentTarget
+    const startX = event.clientX
+    // measured, not the stored width: the table stretches to fill the container when it is narrower
+    const startWidth = handle.parentElement!.getBoundingClientRect().width
+    handle.setPointerCapture(event.pointerId)
+    setIsResizing(true)
+    document.body.style.userSelect = 'none'
+
+    const handleMove = (moveEvent: PointerEvent) => {
+      onResize(column.id, clampWidth(startWidth + moveEvent.clientX - startX))
+    }
+
+    const handleEnd = () => {
+      handle.releasePointerCapture(event.pointerId)
+      handle.removeEventListener('pointermove', handleMove)
+      handle.removeEventListener('pointerup', handleEnd)
+      handle.removeEventListener('pointercancel', handleEnd)
+      document.body.style.userSelect = ''
+      setIsResizing(false)
+    }
+
+    handle.addEventListener('pointermove', handleMove)
+    handle.addEventListener('pointerup', handleEnd)
+    handle.addEventListener('pointercancel', handleEnd)
+  }
 
   return (
     <th
       ref={setNodeRef}
-      className={`text-left px-6 py-3 font-semibold text-gray-900 shadow-[inset_0_-1px_0_0_#e5e7eb] ${column.minWidth || ''} ${
+      className={`relative text-left px-6 py-3 font-semibold text-gray-900 shadow-[inset_0_-1px_0_0_#e5e7eb] ${
         isDragging ? 'bg-gray-100 opacity-40' : isOver ? 'bg-blue-50' : 'bg-gray-50'
       }`}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         {column.sortKey && onSortChange ? (
           <button
             onClick={() => onSortChange(column.sortKey!)}
-            className="flex items-center gap-2 hover:text-gray-600 text-left"
+            className="flex items-center gap-2 hover:text-gray-600 text-left min-w-0"
           >
-            {column.label}
-            <span className={`text-xs ${isActive ? 'text-gray-600' : 'text-gray-300'}`}>
+            <span className="truncate">{column.label}</span>
+            <span className={`text-xs shrink-0 ${isActive ? 'text-gray-600' : 'text-gray-300'}`}>
               {isActive ? (sortOrder === 'asc' ? '▲' : '▼') : '◇'}
             </span>
           </button>
         ) : (
-          <span>{column.label}</span>
+          <span className="truncate">{column.label}</span>
         )}
         <button
           {...attributes}
           {...listeners}
-          className="p-1 cursor-grab active:cursor-grabbing hover:text-gray-600"
+          className="p-1 shrink-0 cursor-grab active:cursor-grabbing hover:text-gray-600"
           title="Drag to reorder"
         >
           <DragHandleIcon />
         </button>
+      </div>
+      <div
+        onPointerDown={handleResizeStart}
+        className="group absolute top-0 -right-[4px] h-full w-[9px] z-20 flex justify-center cursor-col-resize touch-none"
+        title="Drag to resize"
+      >
+        <div
+          className={`h-full ${isResizing ? 'w-0.5 bg-blue-500' : 'w-px bg-gray-300 group-hover:w-0.5 group-hover:bg-blue-500'}`}
+        />
       </div>
     </th>
   )
@@ -320,6 +386,9 @@ export default function FindingsTable({
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null)
   const defaultColumnIds = DEFAULT_COLUMNS.map(c => c.id)
   const [columnOrder, setColumnOrder] = useColumnOrder(defaultColumnIds)
+  const [columnWidths, setColumnWidths] = useColumnWidths(
+    Object.fromEntries(DEFAULT_COLUMNS.map(c => [c.id, c.defaultWidth]))
+  )
 
   const handleCopy = async (fieldId: string, value: string) => {
     await navigator.clipboard.writeText(value)
@@ -372,9 +441,17 @@ export default function FindingsTable({
     onCopy: handleCopy,
   }
 
+  const handleResize = (columnId: string, width: number) => {
+    setColumnWidths(previous => ({ ...previous, [columnId]: width }))
+  }
+
   const orderedColumns = columnOrder
     .map(id => DEFAULT_COLUMNS.find(c => c.id === id))
     .filter((c): c is ColumnDef => c !== undefined)
+
+  const tableWidth =
+    orderedColumns.reduce((sum, column) => sum + (columnWidths[column.id] ?? column.defaultWidth), 0) +
+    ACTIONS_COLUMN_WIDTH
 
   return (
     <div className="space-y-4">
@@ -385,7 +462,13 @@ export default function FindingsTable({
           onDragCancel={() => setActiveColumnId(null)}
           onDragEnd={handleDragEnd}
         >
-          <table className="w-full text-sm">
+          <table className="min-w-full table-fixed text-sm" style={{ width: tableWidth }}>
+            <colgroup>
+              {orderedColumns.map(column => (
+                <col key={column.id} style={{ width: columnWidths[column.id] ?? column.defaultWidth }} />
+              ))}
+              <col style={{ width: ACTIONS_COLUMN_WIDTH }} />
+            </colgroup>
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <SortableContext
@@ -396,6 +479,7 @@ export default function FindingsTable({
                     <SortableHeaderCell
                       key={column.id}
                       column={column}
+                      onResize={handleResize}
                       sortBy={sortBy}
                       sortOrder={sortOrder}
                       onSortChange={onSortChange}
@@ -418,7 +502,7 @@ export default function FindingsTable({
                     {orderedColumns.map(column => (
                       <td
                         key={`${finding.id}-${column.id}`}
-                        className={`px-6 py-4 ${column.minWidth || ''}`}
+                        className="px-6 py-4 overflow-hidden"
                       >
                         {column.render(finding, renderContext)}
                       </td>
