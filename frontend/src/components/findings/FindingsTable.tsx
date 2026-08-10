@@ -1,7 +1,7 @@
 import { Finding } from '../../types'
 import StatusBadge from '../common/StatusBadge'
 import Pagination from '../common/Pagination'
-import { useState, useEffect, ReactNode, PointerEvent as ReactPointerEvent } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { findingsApi } from '../../api/findings'
 import {
   DndContext,
@@ -247,8 +247,8 @@ function useColumnOrder(defaultOrder: string[]) {
   return [order, setOrder] as const
 }
 
-function clampWidth(width: number) {
-  return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(width)))
+function clampWidth(width: number, minWidth = MIN_COLUMN_WIDTH) {
+  return Math.min(MAX_COLUMN_WIDTH, Math.max(minWidth, Math.round(width)))
 }
 
 function useColumnWidths(defaultWidths: Record<string, number>) {
@@ -279,12 +279,14 @@ function useColumnWidths(defaultWidths: Record<string, number>) {
 function SortableHeaderCell({
   column,
   onResize,
+  onMeasureMinWidth,
   sortBy,
   sortOrder,
   onSortChange,
 }: {
   column: ColumnDef
   onResize: (columnId: string, width: number) => void
+  onMeasureMinWidth: (columnId: string, minWidth: number) => void
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   onSortChange?: (column: string) => void
@@ -293,8 +295,23 @@ function SortableHeaderCell({
     id: column.id,
   })
   const [isResizing, setIsResizing] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const isActive = sortBy === column.id || (column.sortKey && sortBy === column.sortKey)
+
+  // the header label never truncates, so a column can never be dragged narrower than its own header
+  const measureMinWidth = () => {
+    const content = contentRef.current
+    if (!content) return MIN_COLUMN_WIDTH
+    const styles = getComputedStyle(content.parentElement!)
+    const padding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight)
+    return Math.ceil(content.getBoundingClientRect().width + padding)
+  }
+
+  // the header content never changes at runtime, so measure once instead of on every resize render
+  useLayoutEffect(() => {
+    onMeasureMinWidth(column.id, measureMinWidth())
+  }, [column.id, column.label])
 
   const handleResizeStart = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -304,12 +321,13 @@ function SortableHeaderCell({
     const startX = event.clientX
     // measured, not the stored width: the table stretches to fill the container when it is narrower
     const startWidth = handle.parentElement!.getBoundingClientRect().width
+    const minWidth = measureMinWidth()
     handle.setPointerCapture(event.pointerId)
     setIsResizing(true)
     document.body.style.userSelect = 'none'
 
     const handleMove = (moveEvent: PointerEvent) => {
-      onResize(column.id, clampWidth(startWidth + moveEvent.clientX - startX))
+      onResize(column.id, clampWidth(startWidth + moveEvent.clientX - startX, minWidth))
     }
 
     const handleEnd = () => {
@@ -333,19 +351,19 @@ function SortableHeaderCell({
         isDragging ? 'bg-gray-100 opacity-40' : isOver ? 'bg-blue-50' : 'bg-gray-50'
       }`}
     >
-      <div className="flex items-center gap-2 min-w-0">
+      <div ref={contentRef} className="flex w-max items-center gap-2">
         {column.sortKey && onSortChange ? (
           <button
             onClick={() => onSortChange(column.sortKey!)}
-            className="flex items-center gap-2 hover:text-gray-600 text-left min-w-0"
+            className="flex items-center gap-2 hover:text-gray-600 text-left"
           >
-            <span className="truncate">{column.label}</span>
+            <span className="whitespace-nowrap">{column.label}</span>
             <span className={`text-xs shrink-0 ${isActive ? 'text-gray-600' : 'text-gray-300'}`}>
               {isActive ? (sortOrder === 'asc' ? '▲' : '▼') : '◇'}
             </span>
           </button>
         ) : (
-          <span className="truncate">{column.label}</span>
+          <span className="whitespace-nowrap">{column.label}</span>
         )}
         <button
           {...attributes}
@@ -389,6 +407,7 @@ export default function FindingsTable({
   const [columnWidths, setColumnWidths] = useColumnWidths(
     Object.fromEntries(DEFAULT_COLUMNS.map(c => [c.id, c.defaultWidth]))
   )
+  const [minWidths, setMinWidths] = useState<Record<string, number>>({})
 
   const handleCopy = async (fieldId: string, value: string) => {
     await navigator.clipboard.writeText(value)
@@ -445,13 +464,18 @@ export default function FindingsTable({
     setColumnWidths(previous => ({ ...previous, [columnId]: width }))
   }
 
+  const handleMeasureMinWidth = (columnId: string, minWidth: number) => {
+    setMinWidths(previous => (previous[columnId] === minWidth ? previous : { ...previous, [columnId]: minWidth }))
+  }
+
   const orderedColumns = columnOrder
     .map(id => DEFAULT_COLUMNS.find(c => c.id === id))
     .filter((c): c is ColumnDef => c !== undefined)
 
-  const tableWidth =
-    orderedColumns.reduce((sum, column) => sum + (columnWidths[column.id] ?? column.defaultWidth), 0) +
-    ACTIONS_COLUMN_WIDTH
+  const widthOf = (column: ColumnDef) =>
+    Math.max(columnWidths[column.id] ?? column.defaultWidth, minWidths[column.id] ?? 0)
+
+  const tableWidth = orderedColumns.reduce((sum, column) => sum + widthOf(column), 0) + ACTIONS_COLUMN_WIDTH
 
   return (
     <div className="space-y-4">
@@ -465,7 +489,7 @@ export default function FindingsTable({
           <table className="min-w-full table-fixed text-sm" style={{ width: tableWidth }}>
             <colgroup>
               {orderedColumns.map(column => (
-                <col key={column.id} style={{ width: columnWidths[column.id] ?? column.defaultWidth }} />
+                <col key={column.id} style={{ width: widthOf(column) }} />
               ))}
               <col style={{ width: ACTIONS_COLUMN_WIDTH }} />
             </colgroup>
@@ -480,6 +504,7 @@ export default function FindingsTable({
                       key={column.id}
                       column={column}
                       onResize={handleResize}
+                      onMeasureMinWidth={handleMeasureMinWidth}
                       sortBy={sortBy}
                       sortOrder={sortOrder}
                       onSortChange={onSortChange}
